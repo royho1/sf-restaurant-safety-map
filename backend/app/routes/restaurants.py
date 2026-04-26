@@ -48,7 +48,10 @@ def _parse_int(value: str | None, default: int | None = None) -> int | None:
 
 @bp.get("")
 def list_restaurants():
+    # `search` is an alias for `name` (substring match on business_name).
+    search = request.args.get("search", type=str)
     name = request.args.get("name", type=str)
+    name_term = (search or name or "").strip() or None
     postal_code = request.args.get("postal_code", type=str)
     min_score = _parse_int(request.args.get("min_score"))
     has_coordinates = _parse_bool(request.args.get("has_coordinates"))
@@ -62,9 +65,9 @@ def list_restaurants():
     where: list[str] = []
     params: list = []
 
-    if name:
+    if name_term:
         where.append("r.business_name LIKE ?")
-        params.append(f"%{name}%")
+        params.append(f"%{name_term}%")
     if postal_code:
         where.append("r.business_postal_code = ?")
         params.append(postal_code)
@@ -120,6 +123,61 @@ def list_restaurants():
             "results": rows_to_dicts(rows),
         }
     )
+
+
+@bp.get("/<business_id>/inspections")
+def get_restaurant_inspections(business_id: str):
+    """Restaurant identity plus the most recent inspection and its violations."""
+    db = get_db()
+
+    restaurant = db.execute(
+        """
+        SELECT
+            business_id,
+            business_name,
+            business_address,
+            business_city,
+            business_state,
+            business_postal_code
+        FROM restaurants
+        WHERE business_id = ?
+        """,
+        (business_id,),
+    ).fetchone()
+
+    if restaurant is None:
+        return jsonify({"error": "Restaurant not found"}), 404
+
+    inspections = db.execute(
+        """
+        SELECT inspection_id, inspection_date, inspection_score, inspection_type
+        FROM inspections
+        WHERE business_id = ?
+        ORDER BY inspection_date DESC, inspection_id DESC
+        """,
+        (business_id,),
+    ).fetchall()
+
+    payload = dict(restaurant)
+    if not inspections:
+        payload["latest_inspection"] = None
+        return jsonify(payload)
+
+    latest = inspections[0]
+    violation_rows = db.execute(
+        """
+        SELECT violation_id, inspection_id, violation_description, risk_category
+        FROM violations
+        WHERE inspection_id = ?
+        ORDER BY violation_id
+        """,
+        (latest["inspection_id"],),
+    ).fetchall()
+
+    latest_payload = dict(latest)
+    latest_payload["violations"] = rows_to_dicts(violation_rows)
+    payload["latest_inspection"] = latest_payload
+    return jsonify(payload)
 
 
 @bp.get("/<business_id>")

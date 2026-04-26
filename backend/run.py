@@ -18,8 +18,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=int(os.environ.get("PORT", "5000")),
-        help="Port to listen on (default: 5000, env: PORT)",
+        default=int(os.environ.get("PORT", "5001")),
+        help="Port to listen on (default: 5001, env: PORT)",
     )
     parser.add_argument(
         "--no-debug",

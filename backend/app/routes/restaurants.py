@@ -8,6 +8,9 @@ bp = Blueprint("restaurants", __name__, url_prefix="/api/restaurants")
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 500
+# When callers explicitly filter to geocoded restaurants (the map view) we
+# allow a much larger page so the whole city can be rendered in one fetch.
+MAX_LIMIT_HAS_COORDINATES = 10000
 
 # CTE picking the most recent scored inspection per restaurant. Reused by both
 # the list endpoint (for filtering / display) and the detail endpoint.
@@ -52,7 +55,8 @@ def list_restaurants():
 
     limit = _parse_int(request.args.get("limit"), DEFAULT_LIMIT) or DEFAULT_LIMIT
     offset = _parse_int(request.args.get("offset"), 0) or 0
-    limit = max(1, min(limit, MAX_LIMIT))
+    effective_max = MAX_LIMIT_HAS_COORDINATES if has_coordinates is True else MAX_LIMIT
+    limit = max(1, min(limit, effective_max))
     offset = max(0, offset)
 
     where: list[str] = []

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Map, { Popup, Source, Layer } from 'react-map-gl';
+import Map, { Marker, Popup, Source, Layer } from 'react-map-gl';
 import axios from 'axios';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -14,6 +14,9 @@ const SF_CENTER = {
   zoom: 12,
 };
 
+const MAP_STYLE_LIGHT = 'mapbox://styles/mapbox/streets-v12';
+const MAP_STYLE_DARK = 'mapbox://styles/mapbox/navigation-night-v1';
+
 const RESTAURANTS_LAYER_ID = 'restaurants-layer';
 
 const circleColorExpression = [
@@ -27,30 +30,56 @@ const circleColorExpression = [
   '#ef4444',
 ];
 
-const DOT_RADIUS_BASE = 5;
-const DOT_RADIUS_HOVER = DOT_RADIUS_BASE * 1.5;
+const DOT_RADIUS_DESKTOP = 5;
+const DOT_RADIUS_MOBILE = 7;
 
-const layerStyle = {
-  id: RESTAURANTS_LAYER_ID,
-  type: 'circle',
-  paint: {
-    'circle-radius': [
-      'case',
-      ['boolean', ['feature-state', 'hover'], false],
-      DOT_RADIUS_HOVER,
-      DOT_RADIUS_BASE,
-    ],
-    'circle-color': circleColorExpression,
-    'circle-stroke-width': [
-      'case',
-      ['boolean', ['feature-state', 'hover'], false],
-      1.5,
-      1,
-    ],
-    'circle-stroke-color': '#ffffff',
-    'circle-opacity': 0.9,
-  },
+const defaultMapFilters = {
+  good: true,
+  mid: true,
+  bad: true,
+  noScore: true,
 };
+
+/** Mapbox filter: visible restaurants by latest score category. */
+function buildScoreCategoryFilter({ good, mid, bad, noScore }) {
+  const parts = [];
+  if (good) parts.push(['>=', ['get', 'score'], 90]);
+  if (mid) {
+    parts.push(['all', ['>=', ['get', 'score'], 70], ['<', ['get', 'score'], 90]]);
+  }
+  if (bad) {
+    parts.push([
+      'all',
+      ['<', ['get', 'score'], 70],
+      ['!', ['==', ['get', 'score'], null]],
+    ]);
+  }
+  if (noScore) parts.push(['==', ['get', 'score'], null]);
+  if (parts.length === 0) return ['==', 1, 0];
+  if (parts.length === 1) return parts[0];
+  return ['any', ...parts];
+}
+
+function computeZipCentroid(rows, zip) {
+  let sumLat = 0;
+  let sumLon = 0;
+  let n = 0;
+  for (const r of rows) {
+    const z = String(r.business_postal_code ?? '').trim();
+    if (z !== zip) continue;
+    const lon = Number(
+      r.longitude ?? r.business_longitude ?? r.lon ?? r.lng
+    );
+    const lat = Number(r.latitude ?? r.business_latitude ?? r.lat);
+    if (Number.isFinite(lon) && Number.isFinite(lat)) {
+      sumLon += lon;
+      sumLat += lat;
+      n += 1;
+    }
+  }
+  if (n === 0) return null;
+  return { lng: sumLon / n, lat: sumLat / n };
+}
 
 function formatAddress(r) {
   const parts = [
@@ -103,12 +132,38 @@ function tooltipScoreClassName(score) {
   return 'map-dot-tooltip-score map-dot-tooltip-score--bad';
 }
 
+/** Valid San Francisco ZIPs from API data: exactly 5 digits, prefix 941. */
+function filterSfZipCodes(rawList) {
+  const seen = new Set();
+  const out = [];
+  for (const raw of rawList || []) {
+    const s = String(raw ?? '').trim();
+    if (s.length !== 5 || !/^\d{5}$/.test(s) || !s.startsWith('941')) continue;
+    if (seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  out.sort();
+  return out;
+}
+
+/** Search bar: 5-digit SF ZIP (941xx), same rule as neighborhood list. */
+function isSfZipSearchQuery(query) {
+  const s = String(query ?? '').trim();
+  return s.length === 5 && /^\d{5}$/.test(s) && s.startsWith('941');
+}
+
 function App() {
   const mapRef = useRef(null);
   const hoveredBusinessIdRef = useRef(null);
   const [restaurants, setRestaurants] = useState([]);
+  const [restaurantsLoading, setRestaurantsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [geoToast, setGeoToast] = useState(null);
   const [mapLoadError, setMapLoadError] = useState(null);
   const [searchNotice, setSearchNotice] = useState(null);
+  const [basemapDark, setBasemapDark] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -118,6 +173,50 @@ function App() {
 
   const [popup, setPopup] = useState(null);
   const [hoverTooltip, setHoverTooltip] = useState(null);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [citywideStats, setCitywideStats] = useState(null);
+  const [statsError, setStatsError] = useState(null);
+  const [postalCodes, setPostalCodes] = useState([]);
+  const [zipInput, setZipInput] = useState('');
+  const [zipMenuOpen, setZipMenuOpen] = useState(false);
+  const [selectedPostal, setSelectedPostal] = useState('');
+  const [neighborhoodDetail, setNeighborhoodDetail] = useState(null);
+  const [neighborhoodLoading, setNeighborhoodLoading] = useState(false);
+  const [neighborhoodError, setNeighborhoodError] = useState(null);
+  const [mapFilters, setMapFilters] = useState(() => ({ ...defaultMapFilters }));
+
+  const scoreLayerFilter = useMemo(
+    () => buildScoreCategoryFilter(mapFilters),
+    [mapFilters]
+  );
+
+  const sfZipCodes = useMemo(
+    () => filterSfZipCodes(postalCodes),
+    [postalCodes]
+  );
+
+  const filteredSfZips = useMemo(() => {
+    if (!zipInput) return sfZipCodes;
+    return sfZipCodes.filter((z) => z.startsWith(zipInput));
+  }, [sfZipCodes, zipInput]);
+
+  const dotRadiusBase = isMobile ? DOT_RADIUS_MOBILE : DOT_RADIUS_DESKTOP;
+  const dotRadiusHover = dotRadiusBase * 1.5;
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  useEffect(() => {
+    if (!geoToast) return;
+    const t = window.setTimeout(() => setGeoToast(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [geoToast]);
 
   const clearDotHover = useCallback((map) => {
     const prev = hoveredBusinessIdRef.current;
@@ -139,6 +238,7 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    setRestaurantsLoading(true);
     axios
       .get(MAP_POINTS_URL)
       .then((res) => {
@@ -152,6 +252,9 @@ function App() {
         if (cancelled) return;
         console.error('Failed to load restaurants:', err);
         setMapLoadError(err.message || 'Failed to load restaurants');
+      })
+      .finally(() => {
+        if (!cancelled) setRestaurantsLoading(false);
       });
     return () => {
       cancelled = true;
@@ -160,6 +263,11 @@ function App() {
 
   useEffect(() => {
     if (!debouncedSearch) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+    if (isSfZipSearchQuery(debouncedSearch)) {
       setSearchResults([]);
       setSearchLoading(false);
       return;
@@ -192,8 +300,10 @@ function App() {
     const onKey = (e) => {
       if (e.key === 'Escape') {
         setSearchOpen(false);
+        setZipMenuOpen(false);
         setPopup(null);
         setHoverTooltip(null);
+        setSidebarOpen(false);
         const map = mapRef.current?.getMap();
         clearDotHover(map);
       }
@@ -201,6 +311,131 @@ function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [clearDotHover]);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    let cancelled = false;
+    setStatsError(null);
+    axios
+      .get(`${API_BASE}/api/stats`)
+      .then((res) => {
+        if (!cancelled) setCitywideStats(res.data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error(err);
+          setStatsError(err.message || 'Failed to load stats');
+        }
+      });
+    axios
+      .get(`${API_BASE}/api/stats/neighborhoods`)
+      .then((res) => {
+        if (!cancelled) setPostalCodes(res.data.postal_codes || []);
+      })
+      .catch((err) => {
+        if (!cancelled) console.error(err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (!sidebarOpen) {
+      setZipInput('');
+      setSelectedPostal('');
+      setZipMenuOpen(false);
+    }
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    if (!sidebarOpen || !selectedPostal) {
+      setNeighborhoodDetail(null);
+      setNeighborhoodError(null);
+      return;
+    }
+    let cancelled = false;
+    setNeighborhoodLoading(true);
+    setNeighborhoodError(null);
+    axios
+      .get(`${API_BASE}/api/stats/neighborhoods`, {
+        params: { postal_code: selectedPostal },
+      })
+      .then((res) => {
+        if (!cancelled) setNeighborhoodDetail(res.data);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setNeighborhoodDetail(null);
+          setNeighborhoodError(
+            err.response?.data?.error || err.message || 'Request failed'
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setNeighborhoodLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sidebarOpen, selectedPostal]);
+
+  const searchZipHighlight = useMemo(() => {
+    return isSfZipSearchQuery(searchQuery) ? searchQuery.trim() : '';
+  }, [searchQuery]);
+
+  const zipForMapPaint = searchZipHighlight || selectedPostal;
+
+  const searchZipRestaurantCount = useMemo(() => {
+    if (!searchZipHighlight) return 0;
+    return restaurants.filter(
+      (r) => String(r.business_postal_code ?? '').trim() === searchZipHighlight
+    ).length;
+  }, [searchZipHighlight, restaurants]);
+
+  useEffect(() => {
+    if (!searchZipHighlight) return;
+    const c = computeZipCentroid(restaurants, searchZipHighlight);
+    if (!c) return;
+
+    const fly = () => {
+      mapRef.current?.flyTo({
+        center: [c.lng, c.lat],
+        zoom: 14,
+        duration: 1200,
+        essential: true,
+      });
+    };
+
+    fly();
+    const retryId = window.setTimeout(fly, 0);
+
+    return () => {
+      window.clearTimeout(retryId);
+    };
+  }, [searchZipHighlight, restaurants]);
+
+  useEffect(() => {
+    if (!selectedPostal || !neighborhoodDetail) return;
+    if (neighborhoodDetail.postal_code !== selectedPostal) return;
+    if (searchZipHighlight) return;
+    const map = mapRef.current?.getMap?.();
+    if (!map) return;
+    const c = computeZipCentroid(restaurants, selectedPostal);
+    if (!c) return;
+    map.flyTo({
+      center: [c.lng, c.lat],
+      zoom: 14,
+      duration: 1400,
+      essential: true,
+    });
+  }, [selectedPostal, neighborhoodDetail, restaurants, searchZipHighlight]);
+
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    clearDotHover(map);
+    setHoverTooltip(null);
+  }, [mapFilters, clearDotHover]);
 
   const geojson = useMemo(() => {
     return {
@@ -218,18 +453,57 @@ function App() {
             rawScore === null || rawScore === undefined || rawScore === ''
               ? null
               : Number(rawScore);
+          const postal_code = String(r.business_postal_code ?? '').trim();
           return {
             type: 'Feature',
             geometry: { type: 'Point', coordinates: [lon, lat] },
             properties: {
               ...r,
               score: Number.isFinite(score) ? score : null,
+              postal_code,
             },
           };
         })
         .filter(Boolean),
     };
   }, [restaurants]);
+
+  const restaurantsCirclePaint = useMemo(() => {
+    const radiusExpr = [
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      dotRadiusHover,
+      dotRadiusBase,
+    ];
+    if (!zipForMapPaint) {
+      return {
+        'circle-radius': radiusExpr,
+        'circle-color': circleColorExpression,
+        'circle-stroke-width': [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          2,
+          1.5,
+        ],
+        'circle-stroke-color': '#ffffff',
+        'circle-opacity': 0.9,
+      };
+    }
+    const inZip = ['==', ['get', 'postal_code'], zipForMapPaint];
+    return {
+      'circle-radius': radiusExpr,
+      'circle-color': circleColorExpression,
+      'circle-opacity': ['case', inZip, 0.92, 0.3],
+      'circle-stroke-width': [
+        'case',
+        ['boolean', ['feature-state', 'hover'], false],
+        ['case', inZip, 4, 2],
+        ['case', inZip, 3, 1.5],
+      ],
+      'circle-stroke-color': '#ffffff',
+      'circle-stroke-opacity': ['case', inZip, 1, 0.35],
+    };
+  }, [zipForMapPaint, dotRadiusBase, dotRadiusHover]);
 
   const loadPopupFromInspectionsEndpoint = async (
     businessId,
@@ -403,15 +677,90 @@ function App() {
     );
   }
 
-  const showDropdown = searchOpen && Boolean(debouncedSearch);
+  const showDropdown =
+    searchOpen &&
+    Boolean(debouncedSearch) &&
+    !isSfZipSearchQuery(searchQuery.trim()) &&
+    !isSfZipSearchQuery(debouncedSearch);
+
+  const dist = citywideStats?.restaurant_score_distribution;
+  const distMax = dist
+    ? Math.max(
+        dist['90_plus'],
+        dist['70_to_89'],
+        dist.below_70,
+        dist.no_score,
+        1
+      )
+    : 1;
+
+  const toggleSidebar = () => setSidebarOpen((o) => !o);
+
+  const setFilter = (key, checked) => {
+    setMapFilters((prev) => ({ ...prev, [key]: checked }));
+  };
+
+  const pickNeighborhoodZip = useCallback((z) => {
+    setZipInput(z);
+    setSelectedPostal(z);
+    setZipMenuOpen(false);
+  }, []);
+
+  const handleZipInputChange = useCallback((e) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 5);
+    setZipInput(digits);
+    setZipMenuOpen(true);
+    setSelectedPostal((prev) => (digits === prev ? prev : ''));
+  }, []);
+
+  const handleZipInputBlur = useCallback(
+    (e) => {
+      window.setTimeout(() => {
+        setZipMenuOpen(false);
+        const d = e.target.value.replace(/\D/g, '').slice(0, 5);
+        if (d.length === 5 && sfZipCodes.includes(d)) {
+          setZipInput(d);
+          setSelectedPostal(d);
+        }
+      }, 180);
+    },
+    [sfZipCodes]
+  );
+
+  const handleNearMe = useCallback(() => {
+    if (!navigator.geolocation) {
+      setGeoToast('Geolocation is not supported in this browser');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { longitude, latitude } = pos.coords;
+        setUserLocation({ lng: longitude, lat: latitude });
+        mapRef.current?.flyTo({
+          center: [longitude, latitude],
+          zoom: 14,
+          duration: 1200,
+          essential: true,
+        });
+      },
+      () => {
+        setGeoToast('Location access denied');
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+    );
+  }, []);
+
+  const mapStyleUrl = basemapDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
 
   return (
-    <div className="app-root">
+    <div
+      className={`app-root ${basemapDark ? 'app-root--map-dark' : 'app-root--map-light'}`}
+    >
       <div className="map-surface">
         <Map
           ref={mapRef}
           initialViewState={SF_CENTER}
-          mapStyle="mapbox://styles/mapbox/streets-v12"
+          mapStyle={mapStyleUrl}
           mapboxAccessToken={MAPBOX_TOKEN}
           interactiveLayerIds={[RESTAURANTS_LAYER_ID]}
           onClick={handleMapClick}
@@ -424,8 +773,25 @@ function App() {
             data={geojson}
             promoteId="business_id"
           >
-            <Layer {...layerStyle} />
+            <Layer
+              id={RESTAURANTS_LAYER_ID}
+              type="circle"
+              paint={restaurantsCirclePaint}
+              filter={scoreLayerFilter}
+            />
           </Source>
+          {userLocation && (
+            <Marker
+              longitude={userLocation.lng}
+              latitude={userLocation.lat}
+              anchor="center"
+            >
+              <div className="user-location-marker" title="Your location">
+                <span className="user-location-pulse" aria-hidden />
+                <span className="user-location-dot" aria-hidden />
+              </div>
+            </Marker>
+          )}
           {popup && (
             <Popup
               longitude={popup.lng}
@@ -435,7 +801,7 @@ function App() {
               closeButton
               closeOnClick={false}
               maxWidth="min(360px, calc(100vw - 48px))"
-              className="restaurant-popup restaurant-popup--detail"
+              className={`restaurant-popup restaurant-popup--detail${basemapDark ? ' restaurant-popup--dark' : ''}`}
             >
               <div className="popup-inner">
                 <p className="popup-kicker">Inspection details</p>
@@ -517,16 +883,348 @@ function App() {
             </div>
           </div>
         )}
+        {restaurantsLoading && !mapLoadError && (
+          <div className="map-loading-overlay" role="status" aria-live="polite">
+            <div className="map-loading-inner">
+              <div className="map-loading-spinner" aria-hidden />
+              <p className="map-loading-text">Loading restaurants…</p>
+            </div>
+          </div>
+        )}
+        <button
+          type="button"
+          className="near-me-btn"
+          onClick={handleNearMe}
+          aria-label="Near me: center map on your location"
+          title="Near me"
+        >
+          <svg
+            className="near-me-icon"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
+          <span className="near-me-label">Near Me</span>
+        </button>
       </div>
+
+      <button
+        type="button"
+        className="map-theme-toggle"
+        onClick={() => setBasemapDark((d) => !d)}
+        aria-label={basemapDark ? 'Use streets map' : 'Use dark map'}
+        title={basemapDark ? 'Streets map' : 'Dark map'}
+      >
+        {basemapDark ? (
+          <svg
+            className="map-theme-icon"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 6.34l1.41 1.41M16.24 16.24l1.41 1.41" />
+          </svg>
+        ) : (
+          <svg
+            className="map-theme-icon"
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        )}
+      </button>
+
+      <button
+        type="button"
+        className="sidebar-menu-btn"
+        onClick={toggleSidebar}
+        aria-expanded={sidebarOpen}
+        aria-controls="map-sidebar-panel"
+        aria-label={sidebarOpen ? 'Close insights panel' : 'Open insights panel'}
+      >
+        {sidebarOpen ? (
+          <span className="sidebar-menu-icon sidebar-menu-icon--close" aria-hidden>
+            ×
+          </span>
+        ) : (
+          <span className="sidebar-menu-icon" aria-hidden>
+            <span />
+            <span />
+            <span />
+          </span>
+        )}
+      </button>
+
+      <div
+        className={`sidebar-backdrop ${sidebarOpen ? 'is-visible' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden={!sidebarOpen}
+      />
+
+      <aside
+        id="map-sidebar-panel"
+        className={`sidebar-panel ${sidebarOpen ? 'is-open' : ''}`}
+        aria-hidden={!sidebarOpen}
+      >
+        <div className="sidebar-panel-header">
+          <h2 className="sidebar-panel-title">Insights</h2>
+          <button
+            type="button"
+            className="sidebar-panel-close"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close panel"
+          >
+            ×
+          </button>
+        </div>
+        <div className="sidebar-panel-body">
+          <section className="sidebar-section">
+            <h3 className="sidebar-section-title">Citywide overview</h3>
+            {statsError && (
+              <p className="sidebar-muted sidebar-error">{statsError}</p>
+            )}
+            {!citywideStats && !statsError && (
+              <p className="sidebar-muted">Loading…</p>
+            )}
+            {citywideStats && (
+              <>
+                <p className="sidebar-stat-line">
+                  <strong>{citywideStats.total_restaurants?.toLocaleString()}</strong>{' '}
+                  restaurants
+                </p>
+                <p className="sidebar-stat-line">
+                  Avg latest score:{' '}
+                  <strong>
+                    {citywideStats.avg_latest_inspection_score != null
+                      ? citywideStats.avg_latest_inspection_score
+                      : '—'}
+                  </strong>
+                </p>
+                <p className="sidebar-chart-label">Score distribution</p>
+                <div className="sidebar-bars" role="img" aria-label="Score distribution">
+                  {[
+                    { key: '90_plus', label: '90+', color: '#22c55e' },
+                    { key: '70_to_89', label: '70–89', color: '#eab308' },
+                    { key: 'below_70', label: '<70', color: '#ef4444' },
+                    { key: 'no_score', label: 'No score', color: '#9ca3af' },
+                  ].map(({ key, label, color }) => {
+                    const n = dist?.[key] ?? 0;
+                    const pct = Math.round((n / distMax) * 100);
+                    return (
+                      <div key={key} className="sidebar-bar-row">
+                        <span className="sidebar-bar-label">{label}</span>
+                        <div className="sidebar-bar-track">
+                          <div
+                            className="sidebar-bar-fill"
+                            style={{
+                              width: `${pct}%`,
+                              background: color,
+                            }}
+                          />
+                        </div>
+                        <span className="sidebar-bar-count">{n}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </section>
+
+          <section className="sidebar-section">
+            <h3 className="sidebar-section-title">Neighborhood breakdown</h3>
+            <div className="sidebar-zip-wrap">
+              <label className="sidebar-select-label" htmlFor="zip-input">
+                ZIP code
+              </label>
+              <input
+                id="zip-input"
+                type="text"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                placeholder="Search 941xx…"
+                className="sidebar-zip-input"
+                value={zipInput}
+                aria-expanded={zipMenuOpen}
+                aria-controls="zip-suggestions"
+                aria-autocomplete="list"
+                role="combobox"
+                onChange={handleZipInputChange}
+                onFocus={() => setZipMenuOpen(true)}
+                onBlur={handleZipInputBlur}
+              />
+              {zipMenuOpen && (
+                <ul
+                  id="zip-suggestions"
+                  className="sidebar-zip-dropdown"
+                  role="listbox"
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  {filteredSfZips.length === 0 ? (
+                    <li className="sidebar-zip-dropdown-status">
+                      {sfZipCodes.length === 0
+                        ? 'No valid 941xx ZIPs in data'
+                        : !zipInput
+                          ? 'Start typing to filter…'
+                          : 'No matching ZIP'}
+                    </li>
+                  ) : (
+                    filteredSfZips.map((z) => (
+                      <li key={z} role="presentation">
+                        <button
+                          type="button"
+                          className="sidebar-zip-option"
+                          role="option"
+                          aria-selected={selectedPostal === z}
+                          onClick={() => pickNeighborhoodZip(z)}
+                        >
+                          {z}
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
+            </div>
+            {neighborhoodLoading && (
+              <p className="sidebar-muted">Loading neighborhood…</p>
+            )}
+            {neighborhoodError && (
+              <p className="sidebar-muted sidebar-error">{neighborhoodError}</p>
+            )}
+            {neighborhoodDetail && !neighborhoodLoading && (
+              <div className="sidebar-neighborhood-detail">
+                <p className="sidebar-stat-line">
+                  <strong>
+                    {neighborhoodDetail.restaurant_count?.toLocaleString()}
+                  </strong>{' '}
+                  restaurants
+                </p>
+                <p className="sidebar-stat-line">
+                  Avg latest score:{' '}
+                  <strong>
+                    {neighborhoodDetail.avg_latest_inspection_score != null
+                      ? neighborhoodDetail.avg_latest_inspection_score
+                      : '—'}
+                  </strong>
+                </p>
+                <p className="sidebar-subheading">Highest scores</p>
+                {(neighborhoodDetail.top_restaurants || []).length === 0 ? (
+                  <p className="sidebar-muted">No scored restaurants in this ZIP.</p>
+                ) : (
+                  <ol className="sidebar-rank-list">
+                    {neighborhoodDetail.top_restaurants.map((r) => (
+                      <li key={r.business_id}>
+                        <span className="sidebar-rank-name">{r.business_name}</span>
+                        <span className="sidebar-rank-score">{r.latest_inspection_score}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                <p className="sidebar-subheading">Lowest scores</p>
+                {(neighborhoodDetail.bottom_restaurants || []).length === 0 ? (
+                  <p className="sidebar-muted">No scored restaurants in this ZIP.</p>
+                ) : (
+                  <ol className="sidebar-rank-list">
+                    {neighborhoodDetail.bottom_restaurants.map((r) => (
+                      <li key={r.business_id}>
+                        <span className="sidebar-rank-name">{r.business_name}</span>
+                        <span className="sidebar-rank-score">{r.latest_inspection_score}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section className="sidebar-section">
+            <div className="sidebar-heading-with-actions">
+              <h3 className="sidebar-section-title">Map filters</h3>
+              <div
+                className="sidebar-pill-group"
+                role="group"
+                aria-label="Map filter shortcuts"
+              >
+                <button
+                  type="button"
+                  className="sidebar-pill-btn"
+                  onClick={() => setMapFilters({ ...defaultMapFilters })}
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  className="sidebar-pill-btn"
+                  onClick={() =>
+                    setMapFilters({
+                      good: false,
+                      mid: false,
+                      bad: false,
+                      noScore: false,
+                    })
+                  }
+                >
+                  Select None
+                </button>
+              </div>
+            </div>
+            <p className="sidebar-help">
+              Show dots by latest inspection score category.
+            </p>
+            <ul className="sidebar-checklist">
+              {[
+                { key: 'good', label: '90+ (green)' },
+                { key: 'mid', label: '70–89 (yellow)' },
+                { key: 'bad', label: 'Below 70 (red)' },
+                { key: 'noScore', label: 'No score (gray)' },
+              ].map(({ key, label }) => (
+                <li key={key}>
+                  <label className="sidebar-check-label">
+                    <input
+                      type="checkbox"
+                      checked={mapFilters[key]}
+                      onChange={(e) => setFilter(key, e.target.checked)}
+                    />
+                    {label}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      </aside>
 
       <div className="search-panel">
         <input
           type="search"
           className="search-input"
-          placeholder="Search restaurants by name…"
+          placeholder="Search restaurants or ZIP code..."
           value={searchQuery}
           autoComplete="off"
-          aria-label="Search restaurants"
+          aria-label="Search restaurants or ZIP code"
           aria-expanded={showDropdown}
           aria-controls="search-results-list"
           onChange={(e) => {
@@ -538,6 +1236,25 @@ function App() {
             window.setTimeout(() => setSearchOpen(false), 180);
           }}
         />
+        {searchZipHighlight && (
+          <div className="search-zip-badge" role="status">
+            <span className="search-zip-badge-text">
+              Showing {searchZipRestaurantCount} restaurant
+              {searchZipRestaurantCount === 1 ? '' : 's'} in {searchZipHighlight}
+            </span>
+            <button
+              type="button"
+              className="search-zip-badge-clear"
+              onClick={() => {
+                setSearchQuery('');
+                setSearchOpen(false);
+              }}
+              aria-label="Clear ZIP search"
+            >
+              ×
+            </button>
+          </div>
+        )}
         {showDropdown && (
           <ul
             id="search-results-list"
@@ -581,6 +1298,11 @@ function App() {
       </div>
 
       <div className="app-messages" aria-live="polite">
+        {geoToast && (
+          <div className="app-toast app-toast--neutral" role="status">
+            {geoToast}
+          </div>
+        )}
         {mapLoadError && (
           <div className="app-error" role="alert">
             {mapLoadError}

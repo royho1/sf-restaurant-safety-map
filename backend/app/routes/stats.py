@@ -1,122 +1,152 @@
 """Aggregate stats endpoints."""
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 from ..utils.db import get_db, rows_to_dicts
 
 bp = Blueprint("stats", __name__, url_prefix="/api/stats")
 
-TOP_VIOLATIONS_LIMIT = 10
-TOP_NEIGHBORHOOD_VIOLATIONS = 3
+TOP_BOTTOM_RESTAURANTS = 3
 
-# 100 -> 90 -> 80 -> 70 -> <70 buckets, plus an "unscored" bucket for context.
-SCORE_BUCKETS = [
-    ("90-100", 90, 100),
-    ("80-89", 80, 89),
-    ("70-79", 70, 79),
-    ("0-69", 0, 69),
-]
+# Same "latest scored inspection per restaurant" definition as /api/restaurants.
+LATEST_SCORED_INSPECTION_CTE = """
+WITH latest AS (
+    SELECT
+        business_id,
+        inspection_id,
+        inspection_date,
+        inspection_score,
+        ROW_NUMBER() OVER (
+            PARTITION BY business_id
+            ORDER BY inspection_date DESC, inspection_id DESC
+        ) AS rn
+    FROM inspections
+    WHERE inspection_score IS NOT NULL
+)
+"""
 
 
 @bp.get("")
 def citywide_stats():
+    """Total restaurants, average latest inspection score, score distribution."""
     db = get_db()
 
-    total_restaurants = db.execute("SELECT COUNT(*) AS n FROM restaurants").fetchone()["n"]
-    total_inspections = db.execute("SELECT COUNT(*) AS n FROM inspections").fetchone()["n"]
-    total_violations = db.execute("SELECT COUNT(*) AS n FROM violations").fetchone()["n"]
-
-    avg_row = db.execute(
-        "SELECT AVG(inspection_score) AS avg_score FROM inspections WHERE inspection_score IS NOT NULL"
-    ).fetchone()
-    avg_score = round(avg_row["avg_score"], 2) if avg_row["avg_score"] is not None else None
-
-    most_common = db.execute(
+    row = db.execute(
+        f"""
+        {LATEST_SCORED_INSPECTION_CTE}
+        SELECT
+            COUNT(*) AS total_restaurants,
+            AVG(latest.inspection_score) AS avg_latest_score,
+            SUM(CASE WHEN latest.inspection_score IS NULL THEN 1 ELSE 0 END) AS no_score,
+            SUM(CASE WHEN latest.inspection_score >= 90 THEN 1 ELSE 0 END) AS score_90_plus,
+            SUM(
+                CASE
+                    WHEN latest.inspection_score >= 70 AND latest.inspection_score < 90
+                    THEN 1 ELSE 0
+                END
+            ) AS score_70_to_89,
+            SUM(
+                CASE
+                    WHEN latest.inspection_score < 70 THEN 1 ELSE 0
+                END
+            ) AS score_below_70
+        FROM restaurants r
+        LEFT JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
         """
-        SELECT violation_description, risk_category, COUNT(*) AS count
-        FROM violations
-        WHERE violation_description IS NOT NULL
-        GROUP BY violation_description, risk_category
-        ORDER BY count DESC
-        LIMIT ?
-        """,
-        (TOP_VIOLATIONS_LIMIT,),
-    ).fetchall()
+    ).fetchone()
 
-    distribution = []
-    for label, lo, hi in SCORE_BUCKETS:
-        n = db.execute(
-            """
-            SELECT COUNT(*) AS n FROM inspections
-            WHERE inspection_score IS NOT NULL
-              AND inspection_score BETWEEN ? AND ?
-            """,
-            (lo, hi),
-        ).fetchone()["n"]
-        distribution.append({"bucket": label, "min_score": lo, "max_score": hi, "count": n})
-
-    unscored = db.execute(
-        "SELECT COUNT(*) AS n FROM inspections WHERE inspection_score IS NULL"
-    ).fetchone()["n"]
-    distribution.append({"bucket": "unscored", "min_score": None, "max_score": None, "count": unscored})
-
+    avg = row["avg_latest_score"]
     return jsonify(
         {
-            "total_restaurants": total_restaurants,
-            "total_inspections": total_inspections,
-            "total_violations": total_violations,
-            "avg_inspection_score": avg_score,
-            "most_common_violations": rows_to_dicts(most_common),
-            "score_distribution": distribution,
+            "total_restaurants": row["total_restaurants"],
+            "avg_latest_inspection_score": round(avg, 2) if avg is not None else None,
+            "restaurant_score_distribution": {
+                "90_plus": row["score_90_plus"],
+                "70_to_89": row["score_70_to_89"],
+                "below_70": row["score_below_70"],
+                "no_score": row["no_score"],
+            },
         }
     )
 
 
 @bp.get("/neighborhoods")
 def neighborhood_stats():
+    """Without postal_code: list zips. With postal_code: detail + top/bottom restaurants."""
     db = get_db()
+    postal = (request.args.get("postal_code", type=str) or "").strip()
 
-    rows = db.execute(
-        """
+    if not postal:
+        codes = db.execute(
+            """
+            SELECT DISTINCT business_postal_code AS postal_code
+            FROM restaurants
+            WHERE business_postal_code IS NOT NULL
+              AND TRIM(business_postal_code) <> ''
+            ORDER BY business_postal_code COLLATE NOCASE
+            """
+        ).fetchall()
+        return jsonify({"postal_codes": [r["postal_code"] for r in codes]})
+
+    exists = db.execute(
+        "SELECT 1 AS ok FROM restaurants WHERE business_postal_code = ? LIMIT 1",
+        (postal,),
+    ).fetchone()
+    if not exists:
+        return jsonify({"error": "Unknown postal code"}), 404
+
+    summary = db.execute(
+        f"""
+        {LATEST_SCORED_INSPECTION_CTE}
         SELECT
-            r.business_postal_code AS postal_code,
-            COUNT(DISTINCT r.business_id) AS restaurant_count,
-            AVG(i.inspection_score)       AS avg_score,
-            COUNT(i.inspection_id)        AS scored_inspection_count
+            COUNT(*) AS restaurant_count,
+            AVG(latest.inspection_score) AS avg_latest_score
         FROM restaurants r
-        LEFT JOIN inspections i
-               ON i.business_id = r.business_id
-              AND i.inspection_score IS NOT NULL
-        WHERE r.business_postal_code IS NOT NULL
-          AND r.business_postal_code <> ''
-        GROUP BY r.business_postal_code
-        ORDER BY restaurant_count DESC
-        """,
-    ).fetchall()
-
-    top_violations_sql = """
-        SELECT v.violation_description, COUNT(*) AS count
-        FROM violations v
-        JOIN restaurants r ON r.business_id = v.business_id
+        LEFT JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
         WHERE r.business_postal_code = ?
-          AND v.violation_description IS NOT NULL
-        GROUP BY v.violation_description
-        ORDER BY count DESC
+        """,
+        (postal,),
+    ).fetchone()
+
+    top_sql = f"""
+        {LATEST_SCORED_INSPECTION_CTE}
+        SELECT
+            r.business_id,
+            r.business_name,
+            r.business_address,
+            latest.inspection_score AS latest_inspection_score
+        FROM restaurants r
+        INNER JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
+        WHERE r.business_postal_code = ?
+          AND latest.inspection_score IS NOT NULL
+        ORDER BY latest.inspection_score DESC, r.business_name COLLATE NOCASE
+        LIMIT ?
+    """
+    bottom_sql = f"""
+        {LATEST_SCORED_INSPECTION_CTE}
+        SELECT
+            r.business_id,
+            r.business_name,
+            r.business_address,
+            latest.inspection_score AS latest_inspection_score
+        FROM restaurants r
+        INNER JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
+        WHERE r.business_postal_code = ?
+          AND latest.inspection_score IS NOT NULL
+        ORDER BY latest.inspection_score ASC, r.business_name COLLATE NOCASE
         LIMIT ?
     """
 
-    payload = []
-    for row in rows:
-        postal = row["postal_code"]
-        top = db.execute(top_violations_sql, (postal, TOP_NEIGHBORHOOD_VIOLATIONS)).fetchall()
-        payload.append(
-            {
-                "postal_code": postal,
-                "restaurant_count": row["restaurant_count"],
-                "scored_inspection_count": row["scored_inspection_count"],
-                "avg_inspection_score": round(row["avg_score"], 2) if row["avg_score"] is not None else None,
-                "top_violations": rows_to_dicts(top),
-            }
-        )
+    top_rows = db.execute(top_sql, (postal, TOP_BOTTOM_RESTAURANTS)).fetchall()
+    bottom_rows = db.execute(bottom_sql, (postal, TOP_BOTTOM_RESTAURANTS)).fetchall()
 
-    return jsonify({"count": len(payload), "neighborhoods": payload})
+    avg_s = summary["avg_latest_score"]
+    return jsonify(
+        {
+            "postal_code": postal,
+            "restaurant_count": summary["restaurant_count"],
+            "avg_latest_inspection_score": round(avg_s, 2) if avg_s is not None else None,
+            "top_restaurants": rows_to_dicts(top_rows),
+            "bottom_restaurants": rows_to_dicts(bottom_rows),
+        }
+    )

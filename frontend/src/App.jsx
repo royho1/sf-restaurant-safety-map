@@ -18,6 +18,82 @@ const MAP_STYLE_LIGHT = 'mapbox://styles/mapbox/streets-v12';
 const MAP_STYLE_DARK = 'mapbox://styles/mapbox/navigation-night-v1';
 
 const RESTAURANTS_LAYER_ID = 'restaurants-layer';
+const RESTAURANTS_HEATMAP_LAYER_ID = 'restaurants-heatmap-layer';
+const RESTAURANTS_HIT_LAYER_ID = 'restaurants-hit-layer';
+
+/** Lower inspection score ⇒ higher heatmap weight (numeric stops for interpolate). */
+const heatmapWeightExpression = [
+  'case',
+  ['any', ['==', ['get', 'score'], null], ['!', ['has', 'score']]],
+  0.05,
+  [
+    'interpolate',
+    ['linear'],
+    ['to-number', ['get', 'score'], 85],
+    100,
+    0.02,
+    90,
+    0.12,
+    70,
+    0.45,
+    50,
+    0.72,
+    0,
+    1,
+  ],
+];
+
+const restaurantsHeatmapPaint = {
+  'heatmap-weight': heatmapWeightExpression,
+  'heatmap-intensity': [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    10,
+    1,
+    12,
+    1.6,
+    14,
+    2.1,
+    16,
+    2.6,
+    18,
+    3,
+    20,
+    3,
+  ],
+  'heatmap-radius': [
+    'interpolate',
+    ['linear'],
+    ['zoom'],
+    10,
+    15,
+    13,
+    22,
+    16,
+    28,
+    18,
+    34,
+    22,
+    40,
+  ],
+  'heatmap-opacity': 0.7,
+  'heatmap-color': [
+    'interpolate',
+    ['linear'],
+    ['heatmap-density'],
+    0,
+    'rgba(33,102,172,0)',
+    0.2,
+    'rgba(147,197,253,0.45)',
+    0.45,
+    'rgba(251,191,36,0.65)',
+    0.7,
+    'rgba(249,115,22,0.82)',
+    1,
+    'rgba(220,38,38,0.95)',
+  ],
+};
 
 const circleColorExpression = [
   'case',
@@ -58,6 +134,62 @@ function buildScoreCategoryFilter({ good, mid, bad, noScore }) {
   if (parts.length === 0) return ['==', 1, 0];
   if (parts.length === 1) return parts[0];
   return ['any', ...parts];
+}
+
+/** Pins / Heatmap / Off — IDs must match imperative addLayer / setLayoutProperty. */
+function applyRestaurantOverlayLayoutVisibility(map, mode) {
+  if (!map) return;
+  const pinsVis = mode === 'pins' ? 'visible' : 'none';
+  const heatVis = mode === 'heatmap' ? 'visible' : 'none';
+  if (map.getLayer(RESTAURANTS_LAYER_ID)) {
+    map.setLayoutProperty(RESTAURANTS_LAYER_ID, 'visibility', pinsVis);
+  }
+  if (map.getLayer(RESTAURANTS_HIT_LAYER_ID)) {
+    map.setLayoutProperty(RESTAURANTS_HIT_LAYER_ID, 'visibility', heatVis);
+  }
+  if (map.getLayer(RESTAURANTS_HEATMAP_LAYER_ID)) {
+    map.setLayoutProperty(
+      RESTAURANTS_HEATMAP_LAYER_ID,
+      'visibility',
+      heatVis
+    );
+  }
+}
+
+/**
+ * Inserts `restaurants-heatmap-layer` under the pin layer (z-order: heatmap below pins).
+ * Source id must match GeoJSON source `"restaurants"` used by circle layers.
+ */
+function upsertRestaurantHeatmapLayer(map, scoreFilter, mapMode) {
+  if (!map?.isStyleLoaded?.()) return false;
+  try {
+    if (!map.getSource('restaurants')) return false;
+    if (!map.getLayer(RESTAURANTS_LAYER_ID)) return false;
+
+    if (!map.getLayer(RESTAURANTS_HEATMAP_LAYER_ID)) {
+      map.addLayer(
+        {
+          id: RESTAURANTS_HEATMAP_LAYER_ID,
+          type: 'heatmap',
+          source: 'restaurants',
+          layout: { visibility: 'none' },
+          paint: restaurantsHeatmapPaint,
+          filter: scoreFilter,
+        },
+        RESTAURANTS_LAYER_ID
+      );
+    } else {
+      map.setFilter(RESTAURANTS_HEATMAP_LAYER_ID, scoreFilter);
+      for (const [key, value] of Object.entries(restaurantsHeatmapPaint)) {
+        map.setPaintProperty(RESTAURANTS_HEATMAP_LAYER_ID, key, value);
+      }
+    }
+  } catch (err) {
+    console.warn('[heatmap] upsertRestaurantHeatmapLayer', err);
+    return false;
+  }
+  applyRestaurantOverlayLayoutVisibility(map, mapMode);
+  return true;
 }
 
 function computeZipCentroid(rows, zip) {
@@ -185,11 +317,19 @@ function App() {
   const [neighborhoodLoading, setNeighborhoodLoading] = useState(false);
   const [neighborhoodError, setNeighborhoodError] = useState(null);
   const [mapFilters, setMapFilters] = useState(() => ({ ...defaultMapFilters }));
+  const [mapLayerMode, setMapLayerMode] = useState('pins');
 
   const scoreLayerFilter = useMemo(
     () => buildScoreCategoryFilter(mapFilters),
     [mapFilters]
   );
+
+  const overlayHeatmapRefs = useRef({
+    scoreFilter: [],
+    layerMode: 'pins',
+  });
+  overlayHeatmapRefs.current.scoreFilter = scoreLayerFilter;
+  overlayHeatmapRefs.current.layerMode = mapLayerMode;
 
   const sfZipCodes = useMemo(
     () => filterSfZipCodes(postalCodes),
@@ -203,6 +343,27 @@ function App() {
 
   const dotRadiusBase = isMobile ? DOT_RADIUS_MOBILE : DOT_RADIUS_DESKTOP;
   const dotRadiusHover = dotRadiusBase * 1.5;
+
+  const interactiveRestaurantLayerIds = useMemo(() => {
+    if (mapLayerMode === 'pins') return [RESTAURANTS_LAYER_ID];
+    if (mapLayerMode === 'heatmap') return [RESTAURANTS_HIT_LAYER_ID];
+    return [];
+  }, [mapLayerMode]);
+
+  const restaurantHitCirclePaint = useMemo(
+    () => ({
+      'circle-radius': [
+        'case',
+        ['boolean', ['feature-state', 'hover'], false],
+        dotRadiusHover,
+        dotRadiusBase,
+      ],
+      'circle-opacity': 0,
+      'circle-stroke-width': 0,
+      'circle-stroke-opacity': 0,
+    }),
+    [dotRadiusBase, dotRadiusHover]
+  );
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
@@ -435,7 +596,7 @@ function App() {
     const map = mapRef.current?.getMap();
     clearDotHover(map);
     setHoverTooltip(null);
-  }, [mapFilters, clearDotHover]);
+  }, [mapFilters, mapLayerMode, clearDotHover]);
 
   const geojson = useMemo(() => {
     return {
@@ -564,6 +725,19 @@ function App() {
       const map = event.target;
       if (!map?.getSource?.('restaurants')) return;
 
+      const hoverLayerId =
+        mapLayerMode === 'pins'
+          ? RESTAURANTS_LAYER_ID
+          : mapLayerMode === 'heatmap'
+            ? RESTAURANTS_HIT_LAYER_ID
+            : null;
+
+      if (hoverLayerId === null) {
+        clearDotHover(map);
+        setHoverTooltip(null);
+        return;
+      }
+
       if (popup) {
         clearDotHover(map);
         setHoverTooltip(null);
@@ -571,7 +745,7 @@ function App() {
       }
 
       const features = map.queryRenderedFeatures(event.point, {
-        layers: [RESTAURANTS_LAYER_ID],
+        layers: [hoverLayerId],
       });
 
       if (!features.length) {
@@ -612,7 +786,7 @@ function App() {
         scoreLabel,
       });
     },
-    [popup, clearDotHover]
+    [popup, clearDotHover, mapLayerMode]
   );
 
   const handleMapMouseLeave = useCallback(
@@ -752,6 +926,28 @@ function App() {
 
   const mapStyleUrl = basemapDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
 
+  /** Fires once the Mapbox Map is ready — ensures map.addLayer(heatmap) actually runs after style load. */
+  const handleMapLoad = useCallback(
+    (event) => {
+      upsertRestaurantHeatmapLayer(event.target, scoreLayerFilter, mapLayerMode);
+    },
+    [scoreLayerFilter, mapLayerMode]
+  );
+
+  /**
+   * Keeps heatmap paint/filter/layout in sync (and re-adds the layer after setStyle erases it).
+   */
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    upsertRestaurantHeatmapLayer(map, scoreLayerFilter, mapLayerMode);
+  }, [
+    geojson,
+    mapStyleUrl,
+    scoreLayerFilter,
+    mapLayerMode,
+    restaurants.length,
+  ]);
+
   return (
     <div
       className={`app-root ${basemapDark ? 'app-root--map-dark' : 'app-root--map-light'}`}
@@ -762,7 +958,8 @@ function App() {
           initialViewState={SF_CENTER}
           mapStyle={mapStyleUrl}
           mapboxAccessToken={MAPBOX_TOKEN}
-          interactiveLayerIds={[RESTAURANTS_LAYER_ID]}
+          interactiveLayerIds={interactiveRestaurantLayerIds}
+          onLoad={handleMapLoad}
           onClick={handleMapClick}
           onMouseMove={handleMapMouseMove}
           onMouseLeave={handleMapMouseLeave}
@@ -777,6 +974,12 @@ function App() {
               id={RESTAURANTS_LAYER_ID}
               type="circle"
               paint={restaurantsCirclePaint}
+              filter={scoreLayerFilter}
+            />
+            <Layer
+              id={RESTAURANTS_HIT_LAYER_ID}
+              type="circle"
+              paint={restaurantHitCirclePaint}
               filter={scoreLayerFilter}
             />
           </Source>
@@ -891,6 +1094,30 @@ function App() {
             </div>
           </div>
         )}
+        <div
+          className="map-layer-mode"
+          role="radiogroup"
+          aria-label="Restaurant overlay"
+        >
+          {[
+            { mode: 'pins', label: 'Pins' },
+            { mode: 'heatmap', label: 'Heatmap' },
+            { mode: 'off', label: 'Off' },
+          ].map(({ mode, label }) => (
+            <button
+              key={mode}
+              type="button"
+              role="radio"
+              className="map-layer-mode__btn"
+              aria-checked={mapLayerMode === mode}
+              aria-label={label}
+              onClick={() => setMapLayerMode(mode)}
+              title={label}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           className="near-me-btn"

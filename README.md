@@ -4,6 +4,16 @@ Interactive web app that maps every San Francisco restaurant inspection score on
 
 Data comes from the city's public health-inspection feed: [DataSF — Restaurant Scores (LIVES Standard)](https://data.sfgov.org/Health-and-Social-Services/Restaurant-Scores-LIVES-Standard/pyih-qa8i).
 
+## Screenshots
+
+Map view with score-colored pins and legend (thousands of restaurants across the city).
+
+![San Francisco map with restaurant inspection score pins](docs/screenshots/map-main.png)
+
+Click any pin to open inspection details: address, latest score, inspection date, and violations with risk tags.
+
+![Inspection detail popup for a restaurant](docs/screenshots/restaurant-detail.png)
+
 ## Tech stack
 
 - **Backend:** Python 3.10+, Flask 3, Flask-CORS, SQLite (read-only at request time)

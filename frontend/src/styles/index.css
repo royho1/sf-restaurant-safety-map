@@ -63,6 +63,77 @@ body,
   height: 100vh;
 }
 
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #f8fafc;
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 1s ease;
+}
+
+.app-splash.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.app-splash-title {
+  margin: 0;
+  font-size: clamp(1.7rem, 5vw, 2.65rem);
+  font-weight: 650;
+  letter-spacing: -0.038em;
+  line-height: 1.12;
+  text-align: center;
+  color: #0f172a;
+}
+
+.app-splash-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.app-splash-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.app-splash-dot--good {
+  background: #22c55e;
+}
+
+.app-splash-dot--mid {
+  background: #eab308;
+}
+
+.app-splash-dot--bad {
+  background: #ef4444;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-splash {
+    transition: none;
+  }
+
+  .app-splash.is-leaving {
+    opacity: 0;
+  }
+}
+
 /* Map + hover tooltip overlay (tooltip is HTML, not Mapbox) */
 .map-surface {
   position: absolute;

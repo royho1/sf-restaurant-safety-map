@@ -107,6 +107,10 @@ const circleColorExpression = [
 const DOT_RADIUS_DESKTOP = 5;
 const DOT_RADIUS_MOBILE = 7;
 
+const SPLASH_MIN_MS = 2800;
+const SPLASH_FADE_MS = 1000;
+const SPLASH_MAX_MS = 8000;
+
 const defaultMapFilters = {
   good: true,
   mid: true,
@@ -257,6 +261,7 @@ function App() {
   const [userLocation, setUserLocation] = useState(null);
   const [geoToast, setGeoToast] = useState(null);
   const [mapLoadError, setMapLoadError] = useState(null);
+  const [mapStyleReady, setMapStyleReady] = useState(false);
   const [searchNotice, setSearchNotice] = useState(null);
   const [basemapDark, setBasemapDark] = useState(false);
 
@@ -281,6 +286,10 @@ function App() {
   const [neighborhoodError, setNeighborhoodError] = useState(null);
   const [mapFilters, setMapFilters] = useState(() => ({ ...defaultMapFilters }));
   const [mapLayerMode, setMapLayerMode] = useState('pins');
+  const splashStartedAt = useRef(
+    typeof performance !== 'undefined' ? performance.now() : 0
+  );
+  const [splash, setSplash] = useState({ show: true, fading: false });
 
   const scoreLayerFilter = useMemo(
     () => buildScoreCategoryFilter(mapFilters),
@@ -339,6 +348,49 @@ function App() {
     const t = window.setTimeout(() => setGeoToast(null), 4000);
     return () => window.clearTimeout(t);
   }, [geoToast]);
+
+  const dismissSplash = useCallback(() => {
+    setSplash((s) => {
+      if (!s.show || s.fading) return s;
+      return { show: true, fading: true };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!splash.show || splash.fading) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape' || e.key === 'Enter') dismissSplash();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [splash.show, splash.fading, dismissSplash]);
+
+  useEffect(() => {
+    if (!splash.show || splash.fading) return undefined;
+    const dataReady = !restaurantsLoading || Boolean(mapLoadError);
+    const mapReady = mapStyleReady || Boolean(mapLoadError);
+    const elapsed = performance.now() - splashStartedAt.current;
+    const minWait = Math.max(0, SPLASH_MIN_MS - elapsed);
+    const maxWait = Math.max(0, SPLASH_MAX_MS - elapsed);
+    const wait = dataReady && mapReady ? minWait : maxWait;
+    const id = window.setTimeout(dismissSplash, wait);
+    return () => window.clearTimeout(id);
+  }, [
+    restaurantsLoading,
+    mapLoadError,
+    mapStyleReady,
+    splash.show,
+    splash.fading,
+    dismissSplash,
+  ]);
+
+  useEffect(() => {
+    if (!splash.fading) return;
+    const id = window.setTimeout(() => {
+      setSplash({ show: false, fading: false });
+    }, SPLASH_FADE_MS);
+    return () => window.clearTimeout(id);
+  }, [splash.fading]);
 
   const clearDotHover = useCallback((map) => {
     const prev = hoveredBusinessIdRef.current;
@@ -966,6 +1018,7 @@ function App() {
           onClick={handleMapClick}
           onMouseMove={handleMapMouseMove}
           onMouseLeave={handleMapMouseLeave}
+          onLoad={() => setMapStyleReady(true)}
         >
           <Source
             id="restaurants"
@@ -1145,7 +1198,7 @@ function App() {
             </div>
           </div>
         )}
-        {restaurantsLoading && !mapLoadError && (
+        {restaurantsLoading && !mapLoadError && !splash.show && (
           <div className="map-loading-overlay" role="status" aria-live="polite">
             <div className="map-loading-inner">
               <div className="map-loading-spinner" aria-hidden />
@@ -1680,6 +1733,27 @@ function App() {
           </>
         )}
       </div>
+
+      {splash.show && (
+        <div
+          className={`app-splash${splash.fading ? ' is-leaving' : ''}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="app-splash-title"
+          onClick={dismissSplash}
+        >
+          <div className="app-splash-inner">
+            <h1 id="app-splash-title" className="app-splash-title">
+              SF Restaurant Safety Map
+            </h1>
+            <div className="app-splash-dots" aria-hidden>
+              <span className="app-splash-dot app-splash-dot--good" />
+              <span className="app-splash-dot app-splash-dot--mid" />
+              <span className="app-splash-dot app-splash-dot--bad" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

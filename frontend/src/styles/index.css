@@ -100,28 +100,44 @@ body,
 
 .app-splash-dots {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: 16px;
-  margin-top: 26px;
+  height: 48px;
+  margin-top: 16px;
 }
 
 .app-splash-dot {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
+  will-change: transform;
+  animation: splash-dot-bounce 0.7s ease-in-out infinite;
 }
 
 .app-splash-dot--good {
   background: #22c55e;
+  animation-delay: 0s;
 }
 
 .app-splash-dot--mid {
   background: #eab308;
+  animation-delay: 0.14s;
 }
 
 .app-splash-dot--bad {
   background: #ef4444;
+  animation-delay: 0.28s;
+}
+
+@keyframes splash-dot-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-18px) scale(1.12);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -131,6 +147,10 @@ body,
 
   .app-splash.is-leaving {
     opacity: 0;
+  }
+
+  .app-splash-dot {
+    animation: none;
   }
 }
 

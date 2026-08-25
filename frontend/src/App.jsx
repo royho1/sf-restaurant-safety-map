@@ -107,7 +107,7 @@ const circleColorExpression = [
 const DOT_RADIUS_DESKTOP = 5;
 const DOT_RADIUS_MOBILE = 7;
 
-const SPLASH_MIN_MS = 2800;
+const SPLASH_MIN_MS = 3200;
 const SPLASH_FADE_MS = 1000;
 const SPLASH_MAX_MS = 8000;
 

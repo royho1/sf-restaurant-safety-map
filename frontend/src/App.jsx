@@ -166,8 +166,28 @@ function formatAddress(r) {
 
 function formatInspectionDate(iso) {
   if (iso == null || iso === '') return '—';
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString();
+  const raw = String(iso);
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (ymd) {
+    const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+    return d.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? raw : d.toLocaleDateString();
+}
+
+function googleMapsHref({ lat, lng, address }) {
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  }
+  if (address) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  }
+  return null;
 }
 
 /** API uses values like "High Risk"; show as High / Moderate / Low. */
@@ -229,6 +249,7 @@ function isSfZipSearchQuery(query) {
 
 function App() {
   const mapRef = useRef(null);
+  const searchInputRef = useRef(null);
   const hoveredBusinessIdRef = useRef(null);
   const [restaurants, setRestaurants] = useState([]);
   const [restaurantsLoading, setRestaurantsLoading] = useState(true);
@@ -288,16 +309,21 @@ function App() {
   const restaurantHitCirclePaint = useMemo(
     () => ({
       'circle-radius': [
-        'case',
-        ['boolean', ['feature-state', 'hover'], false],
-        dotRadiusHover,
-        dotRadiusBase,
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        11,
+        18,
+        14,
+        12,
+        16,
+        Math.max(dotRadiusHover, 10),
       ],
       'circle-opacity': 0,
       'circle-stroke-width': 0,
       'circle-stroke-opacity': 0,
     }),
-    [dotRadiusBase, dotRadiusHover]
+    [dotRadiusHover]
   );
 
   useEffect(() => {
@@ -398,6 +424,16 @@ function App() {
 
   useEffect(() => {
     const onKey = (e) => {
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const tag = e.target?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) {
+          return;
+        }
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+        return;
+      }
       if (e.key === 'Escape') {
         setSearchOpen(false);
         setZipMenuOpen(false);
@@ -623,21 +659,34 @@ function App() {
       score: null,
       date: null,
       violations: [],
+      history: [],
     });
     try {
       const { data } = await axios.get(
         `${API_BASE}/api/restaurants/${encodeURIComponent(businessId)}/inspections`
       );
       const latest = data.latest_inspection;
+      const history = Array.isArray(data.inspections) ? data.inspections : [];
+      const scored = history.find(
+        (insp) => insp.inspection_score != null && insp.inspection_score !== ''
+      );
       setPopup({
         lng: lon,
         lat,
         loading: false,
         name: data.business_name,
         address: formatAddress(data),
-        score: latest?.inspection_score ?? null,
-        date: latest?.inspection_date ?? null,
+        score: scored?.inspection_score ?? latest?.inspection_score ?? null,
+        date: scored?.inspection_date ?? latest?.inspection_date ?? null,
+        inspectionType: latest?.inspection_type ?? scored?.inspection_type ?? null,
+        lastVisit:
+          latest?.inspection_date &&
+          scored?.inspection_date &&
+          latest.inspection_date !== scored.inspection_date
+            ? latest.inspection_date
+            : null,
         violations: latest?.violations ?? [],
+        history,
         fetchError: false,
       });
     } catch (err) {
@@ -653,7 +702,9 @@ function App() {
           fallback?.score ??
           null,
         date: fallback?.latest_inspection_date ?? null,
+        inspectionType: null,
         violations: [],
+        history: [],
         fetchError: true,
       });
     }
@@ -858,6 +909,17 @@ function App() {
     [sfZipCodes]
   );
 
+  const handleResetView = useCallback(() => {
+    setPopup(null);
+    setHoverTooltip(null);
+    mapRef.current?.flyTo({
+      center: [SF_CENTER.longitude, SF_CENTER.latitude],
+      zoom: SF_CENTER.zoom,
+      duration: 1000,
+      essential: true,
+    });
+  }, []);
+
   const handleNearMe = useCallback(() => {
     if (!navigator.geolocation) {
       setGeoToast('Geolocation is not supported in this browser');
@@ -882,6 +944,13 @@ function App() {
   }, []);
 
   const mapStyleUrl = basemapDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
+  const popupMapsHref = popup
+    ? googleMapsHref({
+        lat: popup.lat,
+        lng: popup.lng,
+        address: popup.address,
+      })
+    : null;
 
   return (
     <div
@@ -963,6 +1032,16 @@ function App() {
                 ) : (
                   <>
                     <p className="popup-address">{popup.address || '—'}</p>
+                    {popupMapsHref && (
+                      <a
+                        className="popup-maps-link"
+                        href={popupMapsHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open in Google Maps
+                      </a>
+                    )}
                     <dl className="popup-meta">
                       <div>
                         <dt>Latest score</dt>
@@ -979,6 +1058,15 @@ function App() {
                         <dd>{formatInspectionDate(popup.date)}</dd>
                       </div>
                     </dl>
+                    {popup.inspectionType && (
+                      <p className="popup-type">{popup.inspectionType}</p>
+                    )}
+                    {popup.lastVisit && (
+                      <p className="popup-type">
+                        Last visit {formatInspectionDate(popup.lastVisit)} (no
+                        score)
+                      </p>
+                    )}
                     {popup.fetchError && (
                       <p className="popup-note">
                         Could not load inspection data from the server.
@@ -1012,6 +1100,28 @@ function App() {
                         </ul>
                       )}
                     </div>
+                    {(popup.history || []).length > 1 && (
+                      <details className="popup-history">
+                        <summary>
+                          {(popup.history || []).length} inspections on record
+                        </summary>
+                        <ol className="popup-history-list">
+                          {(popup.history || []).slice(0, 8).map((insp) => (
+                            <li key={insp.inspection_id}>
+                              <span className="popup-history-date">
+                                {formatInspectionDate(insp.inspection_date)}
+                              </span>
+                              <span className={scoreClassName(insp.inspection_score)}>
+                                {insp.inspection_score != null &&
+                                insp.inspection_score !== ''
+                                  ? insp.inspection_score
+                                  : '—'}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
                   </>
                 )}
               </div>
@@ -1067,29 +1177,54 @@ function App() {
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="near-me-btn"
-          onClick={handleNearMe}
-          aria-label="Near me: center map on your location"
-          title="Near me"
-        >
-          <svg
-            className="near-me-icon"
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            aria-hidden
+        <div className="map-fab-stack">
+          <button
+            type="button"
+            className="map-reset-btn"
+            onClick={handleResetView}
+            aria-label="Reset map to San Francisco"
+            title="Reset view"
           >
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-          </svg>
-          <span className="near-me-label">Near Me</span>
-        </button>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M3 11.5 12 4l9 7.5" />
+              <path d="M6 10.5V20h12v-9.5" />
+            </svg>
+            <span className="near-me-label">SF</span>
+          </button>
+          <button
+            type="button"
+            className="near-me-btn"
+            onClick={handleNearMe}
+            aria-label="Near me: center map on your location"
+            title="Near me"
+          >
+            <svg
+              className="near-me-icon"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+            </svg>
+            <span className="near-me-label">Near Me</span>
+          </button>
+        </div>
       </div>
 
       <button
@@ -1320,7 +1455,9 @@ function App() {
                           title={`Show ${r.business_name} on the map`}
                         >
                           <span className="sidebar-rank-name">{r.business_name}</span>
-                          <span className="sidebar-rank-score">{r.latest_inspection_score}</span>
+                          <span className={`sidebar-rank-score ${scoreClassName(r.latest_inspection_score)}`}>
+                            {r.latest_inspection_score}
+                          </span>
                         </button>
                       </li>
                     ))}
@@ -1340,7 +1477,9 @@ function App() {
                           title={`Show ${r.business_name} on the map`}
                         >
                           <span className="sidebar-rank-name">{r.business_name}</span>
-                          <span className="sidebar-rank-score">{r.latest_inspection_score}</span>
+                          <span className={`sidebar-rank-score ${scoreClassName(r.latest_inspection_score)}`}>
+                            {r.latest_inspection_score}
+                          </span>
                         </button>
                       </li>
                     ))}
@@ -1408,10 +1547,18 @@ function App() {
       </aside>
 
       <div className="search-panel">
+        <div className="app-brand">
+          <span className="app-brand-mark" aria-hidden />
+          <div>
+            <p className="app-brand-title">SF Restaurant Safety</p>
+            <p className="app-brand-sub">Health inspection scores</p>
+          </div>
+        </div>
         <input
+          ref={searchInputRef}
           type="search"
           className="search-input"
-          placeholder="Search restaurants or ZIP code..."
+          placeholder="Search restaurants or ZIP…"
           value={searchQuery}
           autoComplete="off"
           aria-label="Search restaurants or ZIP code"
@@ -1473,8 +1620,7 @@ function App() {
                     <span className="search-result-address">
                       {formatAddress(r)}
                     </span>
-                    <span className="search-result-score">
-                      Score:{' '}
+                    <span className={`search-result-score ${scoreClassName(r.latest_inspection_score)}`}>
                       {r.latest_inspection_score != null &&
                       r.latest_inspection_score !== ''
                         ? r.latest_inspection_score
@@ -1506,13 +1652,33 @@ function App() {
       </div>
 
       <div className="map-legend">
-        <div className="map-legend-title">
-          Inspection score ({restaurants.length})
-        </div>
-        <LegendItem color="#22c55e" label="90+" />
-        <LegendItem color="#eab308" label="70–89" />
-        <LegendItem color="#ef4444" label="Below 70" />
-        <LegendItem color="#9ca3af" label="No score" />
+        {mapLayerMode === 'heatmap' ? (
+          <>
+            <div className="map-legend-title">
+              Inspection heat ({restaurants.length})
+            </div>
+            <p className="map-legend-hint">
+              Hotter areas are denser or have lower scores
+            </p>
+            <div className="legend-heat-bar" aria-hidden />
+            <div className="legend-heat-labels">
+              <span>Cooler</span>
+              <span>Hotter</span>
+            </div>
+          </>
+        ) : mapLayerMode === 'off' ? (
+          <div className="map-legend-title">Overlay hidden</div>
+        ) : (
+          <>
+            <div className="map-legend-title">
+              Inspection score ({restaurants.length})
+            </div>
+            <LegendItem color="#22c55e" label="90+" />
+            <LegendItem color="#eab308" label="70–89" />
+            <LegendItem color="#ef4444" label="Below 70" />
+            <LegendItem color="#9ca3af" label="No score" />
+          </>
+        )}
       </div>
     </div>
   );

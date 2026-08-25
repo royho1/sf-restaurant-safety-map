@@ -182,7 +182,7 @@ Response: `{ total, limit, offset, count, results: [...] }`.
 Full restaurant record plus every inspection, with violations grouped per inspection. 404 if the ID isn't found.
 
 ### `GET /api/restaurants/<business_id>/inspections`
-Lighter endpoint used by the map popup: restaurant identity plus the most recent inspection and its violations only.
+Lighter endpoint used by the map popup: restaurant identity, a compact `inspections` history (date/score/type), and the most recent inspection with its violations.
 
 ### `GET /api/inspections/<business_id>`
 Every inspection for a restaurant, each with its violations attached. Same payload structure as the popup endpoint, but full history.

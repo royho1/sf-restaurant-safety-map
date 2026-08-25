@@ -159,6 +159,15 @@ def get_restaurant_inspections(business_id: str):
     ).fetchall()
 
     payload = dict(restaurant)
+    payload["inspections"] = [
+        {
+            "inspection_id": row["inspection_id"],
+            "inspection_date": row["inspection_date"],
+            "inspection_score": row["inspection_score"],
+            "inspection_type": row["inspection_type"],
+        }
+        for row in inspections
+    ]
     if not inspections:
         payload["latest_inspection"] = None
         return jsonify(payload)

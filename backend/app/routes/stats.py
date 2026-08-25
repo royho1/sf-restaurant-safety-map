@@ -108,31 +108,28 @@ def neighborhood_stats():
         (postal,),
     ).fetchone()
 
-    top_sql = f"""
+    ranked_select = f"""
         {LATEST_SCORED_INSPECTION_CTE}
         SELECT
             r.business_id,
             r.business_name,
             r.business_address,
+            r.business_city,
+            r.business_state,
+            r.business_postal_code,
+            r.business_latitude,
+            r.business_longitude,
             latest.inspection_score AS latest_inspection_score
         FROM restaurants r
         INNER JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
         WHERE r.business_postal_code = ?
           AND latest.inspection_score IS NOT NULL
+    """
+    top_sql = ranked_select + """
         ORDER BY latest.inspection_score DESC, r.business_name COLLATE NOCASE
         LIMIT ?
     """
-    bottom_sql = f"""
-        {LATEST_SCORED_INSPECTION_CTE}
-        SELECT
-            r.business_id,
-            r.business_name,
-            r.business_address,
-            latest.inspection_score AS latest_inspection_score
-        FROM restaurants r
-        INNER JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
-        WHERE r.business_postal_code = ?
-          AND latest.inspection_score IS NOT NULL
+    bottom_sql = ranked_select + """
         ORDER BY latest.inspection_score ASC, r.business_name COLLATE NOCASE
         LIMIT ?
     """

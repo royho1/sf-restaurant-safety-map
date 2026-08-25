@@ -910,10 +910,34 @@ body,
 
 .sidebar-rank-list li {
   margin-bottom: 6px;
+  list-style: decimal;
+}
+
+.sidebar-rank-btn {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-rank-btn:hover,
+.sidebar-rank-btn:focus-visible {
+  background: var(--ui-row-hover);
+}
+
+.sidebar-rank-btn:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 1px;
 }
 
 .sidebar-rank-name {

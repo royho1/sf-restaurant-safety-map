@@ -15,6 +15,7 @@ data/raw/
 # Node
 frontend/node_modules/
 frontend/build/
+frontend/dist/
 frontend/.env
 
 # OS

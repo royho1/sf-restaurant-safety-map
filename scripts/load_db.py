@@ -125,6 +125,24 @@ def main() -> None:
         inspections.to_sql("inspections", conn, if_exists="append", index=False)
         violations.to_sql("violations", conn, if_exists="append", index=False)
 
+        print("Creating indexes...", flush=True)
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_inspections_business_date "
+            "ON inspections (business_id, inspection_date DESC)"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_restaurants_postal "
+            "ON restaurants (business_postal_code)"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_violations_inspection "
+            "ON violations (inspection_id)"
+        )
+        cur.execute(
+            "CREATE INDEX IF NOT EXISTS idx_violations_business "
+            "ON violations (business_id)"
+        )
+
         conn.commit()
 
         counts = {

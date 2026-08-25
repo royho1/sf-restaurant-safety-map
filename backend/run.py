@@ -12,8 +12,8 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the SF restaurant safety API.")
     parser.add_argument(
         "--host",
-        default=os.environ.get("HOST", "0.0.0.0"),
-        help="Host interface to bind (default: 0.0.0.0, env: HOST)",
+        default=os.environ.get("HOST", "127.0.0.1"),
+        help="Host interface to bind (default: 127.0.0.1, env: HOST)",
     )
     parser.add_argument(
         "--port",

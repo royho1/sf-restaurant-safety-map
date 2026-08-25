@@ -3,7 +3,7 @@ import Map, { Marker, Popup, Source, Layer } from 'react-map-gl';
 import axios from 'axios';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-const API_BASE = 'http://localhost:5001';
+const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 const MAP_POINTS_URL = `${API_BASE}/api/restaurants?has_coordinates=true&limit=10000`;
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -21,25 +21,25 @@ const RESTAURANTS_LAYER_ID = 'restaurants-layer';
 const RESTAURANTS_HEATMAP_LAYER_ID = 'restaurants-heatmap-layer';
 const RESTAURANTS_HIT_LAYER_ID = 'restaurants-hit-layer';
 
-/** Lower inspection score ⇒ higher heatmap weight (numeric stops for interpolate). */
+/** Lower inspection score ⇒ higher heatmap weight. Stops must be ascending. */
 const heatmapWeightExpression = [
   'case',
   ['any', ['==', ['get', 'score'], null], ['!', ['has', 'score']]],
-  0.05,
+  0.08,
   [
     'interpolate',
     ['linear'],
     ['to-number', ['get', 'score'], 85],
-    100,
-    0.02,
-    90,
-    0.12,
-    70,
-    0.45,
-    50,
-    0.72,
     0,
     1,
+    50,
+    0.8,
+    70,
+    0.5,
+    90,
+    0.28,
+    100,
+    0.18,
   ],
 ];
 
@@ -50,46 +50,44 @@ const restaurantsHeatmapPaint = {
     ['linear'],
     ['zoom'],
     10,
-    1,
+    0.55,
     12,
-    1.6,
+    0.95,
     14,
-    2.1,
+    1.25,
     16,
-    2.6,
+    1.6,
     18,
-    3,
-    20,
-    3,
+    1.9,
   ],
   'heatmap-radius': [
     'interpolate',
     ['linear'],
     ['zoom'],
     10,
-    15,
-    13,
+    10,
+    12,
+    16,
+    14,
     22,
     16,
     28,
     18,
     34,
-    22,
-    40,
   ],
-  'heatmap-opacity': 0.7,
+  'heatmap-opacity': 0.8,
   'heatmap-color': [
     'interpolate',
     ['linear'],
     ['heatmap-density'],
     0,
     'rgba(33,102,172,0)',
-    0.2,
+    0.15,
     'rgba(147,197,253,0.45)',
-    0.45,
-    'rgba(251,191,36,0.65)',
-    0.7,
-    'rgba(249,115,22,0.82)',
+    0.35,
+    'rgba(251,191,36,0.7)',
+    0.6,
+    'rgba(249,115,22,0.85)',
     1,
     'rgba(220,38,38,0.95)',
   ],
@@ -134,62 +132,6 @@ function buildScoreCategoryFilter({ good, mid, bad, noScore }) {
   if (parts.length === 0) return ['==', 1, 0];
   if (parts.length === 1) return parts[0];
   return ['any', ...parts];
-}
-
-/** Pins / Heatmap / Off — IDs must match imperative addLayer / setLayoutProperty. */
-function applyRestaurantOverlayLayoutVisibility(map, mode) {
-  if (!map) return;
-  const pinsVis = mode === 'pins' ? 'visible' : 'none';
-  const heatVis = mode === 'heatmap' ? 'visible' : 'none';
-  if (map.getLayer(RESTAURANTS_LAYER_ID)) {
-    map.setLayoutProperty(RESTAURANTS_LAYER_ID, 'visibility', pinsVis);
-  }
-  if (map.getLayer(RESTAURANTS_HIT_LAYER_ID)) {
-    map.setLayoutProperty(RESTAURANTS_HIT_LAYER_ID, 'visibility', heatVis);
-  }
-  if (map.getLayer(RESTAURANTS_HEATMAP_LAYER_ID)) {
-    map.setLayoutProperty(
-      RESTAURANTS_HEATMAP_LAYER_ID,
-      'visibility',
-      heatVis
-    );
-  }
-}
-
-/**
- * Inserts `restaurants-heatmap-layer` under the pin layer (z-order: heatmap below pins).
- * Source id must match GeoJSON source `"restaurants"` used by circle layers.
- */
-function upsertRestaurantHeatmapLayer(map, scoreFilter, mapMode) {
-  if (!map?.isStyleLoaded?.()) return false;
-  try {
-    if (!map.getSource('restaurants')) return false;
-    if (!map.getLayer(RESTAURANTS_LAYER_ID)) return false;
-
-    if (!map.getLayer(RESTAURANTS_HEATMAP_LAYER_ID)) {
-      map.addLayer(
-        {
-          id: RESTAURANTS_HEATMAP_LAYER_ID,
-          type: 'heatmap',
-          source: 'restaurants',
-          layout: { visibility: 'none' },
-          paint: restaurantsHeatmapPaint,
-          filter: scoreFilter,
-        },
-        RESTAURANTS_LAYER_ID
-      );
-    } else {
-      map.setFilter(RESTAURANTS_HEATMAP_LAYER_ID, scoreFilter);
-      for (const [key, value] of Object.entries(restaurantsHeatmapPaint)) {
-        map.setPaintProperty(RESTAURANTS_HEATMAP_LAYER_ID, key, value);
-      }
-    }
-  } catch (err) {
-    console.warn('[heatmap] upsertRestaurantHeatmapLayer', err);
-    return false;
-  }
-  applyRestaurantOverlayLayoutVisibility(map, mapMode);
-  return true;
 }
 
 function computeZipCentroid(rows, zip) {
@@ -324,13 +266,6 @@ function App() {
     [mapFilters]
   );
 
-  const overlayHeatmapRefs = useRef({
-    scoreFilter: [],
-    layerMode: 'pins',
-  });
-  overlayHeatmapRefs.current.scoreFilter = scoreLayerFilter;
-  overlayHeatmapRefs.current.layerMode = mapLayerMode;
-
   const sfZipCodes = useMemo(
     () => filterSfZipCodes(postalCodes),
     [postalCodes]
@@ -412,7 +347,11 @@ function App() {
       .catch((err) => {
         if (cancelled) return;
         console.error('Failed to load restaurants:', err);
-        setMapLoadError(err.message || 'Failed to load restaurants');
+        const networkHint =
+          err.code === 'ERR_NETWORK' || err.message === 'Network Error'
+            ? 'Could not reach the API. Start the Flask server (`python run.py` in backend/) and confirm VITE_API_BASE if you changed ports.'
+            : err.message || 'Failed to load restaurants';
+        setMapLoadError(networkHint);
       })
       .finally(() => {
         if (!cancelled) setRestaurantsLoading(false);
@@ -842,6 +781,24 @@ function App() {
     await loadPopupFromInspectionsEndpoint(r.business_id, lon, lat, r);
   };
 
+  const handleSelectRankedRestaurant = async (r) => {
+    const lon = Number(r.business_longitude ?? r.lon ?? r.lng);
+    const lat = Number(r.business_latitude ?? r.lat);
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) {
+      setSearchNotice('This listing has no coordinates on the map.');
+      return;
+    }
+    setSearchNotice(null);
+    setSidebarOpen(false);
+    mapRef.current?.flyTo({
+      center: [lon, lat],
+      zoom: 16,
+      duration: 1600,
+      essential: true,
+    });
+    await loadPopupFromInspectionsEndpoint(r.business_id, lon, lat, r);
+  };
+
   if (!MAPBOX_TOKEN) {
     return (
       <div style={{ padding: 16 }}>
@@ -926,28 +883,6 @@ function App() {
 
   const mapStyleUrl = basemapDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
 
-  /** Fires once the Mapbox Map is ready — ensures map.addLayer(heatmap) actually runs after style load. */
-  const handleMapLoad = useCallback(
-    (event) => {
-      upsertRestaurantHeatmapLayer(event.target, scoreLayerFilter, mapLayerMode);
-    },
-    [scoreLayerFilter, mapLayerMode]
-  );
-
-  /**
-   * Keeps heatmap paint/filter/layout in sync (and re-adds the layer after setStyle erases it).
-   */
-  useEffect(() => {
-    const map = mapRef.current?.getMap();
-    upsertRestaurantHeatmapLayer(map, scoreLayerFilter, mapLayerMode);
-  }, [
-    geojson,
-    mapStyleUrl,
-    scoreLayerFilter,
-    mapLayerMode,
-    restaurants.length,
-  ]);
-
   return (
     <div
       className={`app-root ${basemapDark ? 'app-root--map-dark' : 'app-root--map-light'}`}
@@ -959,7 +894,6 @@ function App() {
           mapStyle={mapStyleUrl}
           mapboxAccessToken={MAPBOX_TOKEN}
           interactiveLayerIds={interactiveRestaurantLayerIds}
-          onLoad={handleMapLoad}
           onClick={handleMapClick}
           onMouseMove={handleMapMouseMove}
           onMouseLeave={handleMapMouseLeave}
@@ -971,16 +905,31 @@ function App() {
             promoteId="business_id"
           >
             <Layer
+              id={RESTAURANTS_HEATMAP_LAYER_ID}
+              type="heatmap"
+              paint={restaurantsHeatmapPaint}
+              filter={scoreLayerFilter}
+              layout={{
+                visibility: mapLayerMode === 'heatmap' ? 'visible' : 'none',
+              }}
+            />
+            <Layer
               id={RESTAURANTS_LAYER_ID}
               type="circle"
               paint={restaurantsCirclePaint}
               filter={scoreLayerFilter}
+              layout={{
+                visibility: mapLayerMode === 'pins' ? 'visible' : 'none',
+              }}
             />
             <Layer
               id={RESTAURANTS_HIT_LAYER_ID}
               type="circle"
               paint={restaurantHitCirclePaint}
               filter={scoreLayerFilter}
+              layout={{
+                visibility: mapLayerMode === 'heatmap' ? 'visible' : 'none',
+              }}
             />
           </Source>
           {userLocation && (
@@ -1364,8 +1313,15 @@ function App() {
                   <ol className="sidebar-rank-list">
                     {neighborhoodDetail.top_restaurants.map((r) => (
                       <li key={r.business_id}>
-                        <span className="sidebar-rank-name">{r.business_name}</span>
-                        <span className="sidebar-rank-score">{r.latest_inspection_score}</span>
+                        <button
+                          type="button"
+                          className="sidebar-rank-btn"
+                          onClick={() => handleSelectRankedRestaurant(r)}
+                          title={`Show ${r.business_name} on the map`}
+                        >
+                          <span className="sidebar-rank-name">{r.business_name}</span>
+                          <span className="sidebar-rank-score">{r.latest_inspection_score}</span>
+                        </button>
                       </li>
                     ))}
                   </ol>
@@ -1376,9 +1332,16 @@ function App() {
                 ) : (
                   <ol className="sidebar-rank-list">
                     {neighborhoodDetail.bottom_restaurants.map((r) => (
-                      <li key={r.business_id}>
-                        <span className="sidebar-rank-name">{r.business_name}</span>
-                        <span className="sidebar-rank-score">{r.latest_inspection_score}</span>
+                      <li key={`bottom-${r.business_id}`}>
+                        <button
+                          type="button"
+                          className="sidebar-rank-btn"
+                          onClick={() => handleSelectRankedRestaurant(r)}
+                          title={`Show ${r.business_name} on the map`}
+                        >
+                          <span className="sidebar-rank-name">{r.business_name}</span>
+                          <span className="sidebar-rank-score">{r.latest_inspection_score}</span>
+                        </button>
                       </li>
                     ))}
                   </ol>

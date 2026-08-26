@@ -23,13 +23,16 @@ Click any pin to open inspection details: address, latest score, inspection date
 
 ## What's in the box
 
-- One-click circle markers colored by latest inspection score: green (90+), yellow (70–89), red (below 70), gray (no score).
-- Restaurant search with debounced typeahead. Typing a 5-digit `941xx` ZIP switches into ZIP mode and flies the map to that ZIP's centroid.
-- Click any dot for an inspection-detail popup: name, address, latest score, date, and the full violation list with risk category.
-- "Near Me" button uses the browser's geolocation API to recenter the map.
-- Light/dark Mapbox basemap toggle.
-- Insights side panel with citywide totals, an avg-score readout, a score-distribution mini chart, and a per-ZIP drilldown. Click a highest/lowest restaurant to fly the map and open its inspection popup.
-- Score-band map filters (show/hide green, yellow, red, no-score dots).
+- One-click circle markers colored on a **score gradient** (red → yellow → green → dark green at 100), not a single 90+ blob. Weaker scores render larger by default so they stay visible in a 90+ majority.
+- Choose which scores sit on top (reds / yellows / greens) and optionally make every dot the same size.
+- Restaurant search with instant typeahead over the loaded map. Typing a 5-digit `941xx` ZIP switches into ZIP mode and flies the map to that ZIP's centroid.
+- Click any dot for an inspection-detail popup: name, address, latest **scored** inspection, date, violations with risk tags, pin/save, and **Directions** in Apple Maps or Google Maps.
+- Pin restaurants from a popup; they get a star on the map and a saved list in Insights, with one-tap directions.
+- Landmark pins (Golden Gate Bridge, Ferry Building, Oracle Park, and others) appear as you zoom in.
+- "Near Me" button uses the browser's geolocation API to recenter the map. **SF** resets to the city view.
+- Light/dark Mapbox basemap toggle. Click the brand chip to reopen the intro splash.
+- Insights side panel with citywide totals, an avg-score readout, a score-distribution mini chart, the citywide lowest-scoring list, and a per-ZIP drilldown. Click a highest/lowest restaurant to fly the map and open its inspection popup.
+- Score-band map filters (show/hide 90+, 70–89, below 70, no-score dots).
 - Pins / Heatmap / Off overlay toggle. Heatmap weights lower scores more heavily so clusters of weaker inspections stand out.
 
 ## Repository layout
@@ -177,13 +180,15 @@ Liveness check. Returns `{"status": "ok"}`. Returns 503 if `safety.db` is missin
 Snapshot fingerprint for the map. Returns restaurant/inspection counts, `latest_inspection_date`, and `db_mtime` (unix timestamp of the database file). The frontend uses this to reload pins when a refresh replaces the DB.
 
 ### `GET /api/restaurants`
-Paginated, filterable list of restaurants. Each row includes the latest scored inspection (joined via a `ROW_NUMBER() OVER (PARTITION BY business_id ORDER BY inspection_date DESC)` CTE).
+Paginated, filterable list of restaurants. Each row includes the latest scored inspection (joined from a `latest_scores` table built when the database is loaded).
 
 Query params:
 - `search` or `name` — substring match on `business_name` (case-insensitive `LIKE`).
 - `postal_code` — exact match.
 - `min_score` — numeric, filters on the latest score.
 - `has_coordinates=true|false` — restrict to restaurants with or without lat/lng.
+- `view=map` — compact payload for the map (id, name, address, ZIP, coordinates, score). Skips the extra `COUNT(*)` and name sort.
+- `include_total=true|false` — include an exact total. Defaults to false when `view=map`, true otherwise.
 - `limit` (default 50, max 500; max 10,000 when `has_coordinates=true` so the whole map can render in one fetch).
 - `offset` (default 0).
 
@@ -212,6 +217,7 @@ Three tables, all built from the DataSF feed:
 - **restaurants** — one row per `business_id`. Identity, address, phone, lat/lng. Lat/lng are floats and may be NULL when DataSF didn't supply them and Nominatim couldn't resolve the address.
 - **inspections** — one row per `inspection_id`, FK to `restaurants`. Has `inspection_date`, `inspection_score` (nullable; reinspections often have no score), `inspection_type`.
 - **violations** — one row per `violation_id`, FK to `inspections` and `restaurants`. Has `violation_description` and `risk_category` ("High Risk" / "Moderate Risk" / "Low Risk").
+- **latest_scores** — derived at load time: one row per restaurant with its most recent scored inspection. Map, list, and Insights queries join this instead of windowing the full inspections table on every request.
 
 ## Security review
 

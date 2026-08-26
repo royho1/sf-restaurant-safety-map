@@ -1220,6 +1220,27 @@ body,
   color: var(--ui-text);
 }
 
+.sidebar-pin-dir {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-border, #d1d5db);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  font-size: 11px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.sidebar-pin-dir:hover,
+.sidebar-pin-dir:focus-visible {
+  background: var(--ui-row-hover);
+}
+
 .sidebar-help {
   margin: 0 0 10px;
   font-size: 12px;

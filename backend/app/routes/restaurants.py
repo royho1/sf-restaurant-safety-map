@@ -12,22 +12,32 @@ MAX_LIMIT = 500
 # allow a much larger page so the whole city can be rendered in one fetch.
 MAX_LIMIT_HAS_COORDINATES = 10000
 
-# CTE picking the most recent scored inspection per restaurant. Reused by both
-# the list endpoint (for filtering / display) and the detail endpoint.
-LATEST_SCORE_CTE = """
-WITH latest AS (
-    SELECT
-        business_id,
-        inspection_id,
-        inspection_date,
-        inspection_score,
-        ROW_NUMBER() OVER (
-            PARTITION BY business_id
-            ORDER BY inspection_date DESC, inspection_id DESC
-        ) AS rn
-    FROM inspections
-    WHERE inspection_score IS NOT NULL
+LATEST_SCORE_JOIN = (
+    "LEFT JOIN latest_scores latest ON latest.business_id = r.business_id"
 )
+
+MAP_LIST_COLUMNS = """
+            r.business_id,
+            r.business_name,
+            r.business_address,
+            r.business_postal_code,
+            r.business_latitude,
+            r.business_longitude,
+            latest.inspection_score AS latest_inspection_score
+"""
+
+FULL_LIST_COLUMNS = """
+            r.business_id,
+            r.business_name,
+            r.business_address,
+            r.business_city,
+            r.business_state,
+            r.business_postal_code,
+            r.business_phone_number,
+            r.business_latitude,
+            r.business_longitude,
+            latest.inspection_score AS latest_inspection_score,
+            latest.inspection_date  AS latest_inspection_date
 """
 
 
@@ -55,6 +65,11 @@ def list_restaurants():
     postal_code = request.args.get("postal_code", type=str)
     min_score = _parse_int(request.args.get("min_score"))
     has_coordinates = _parse_bool(request.args.get("has_coordinates"))
+    view = (request.args.get("view") or "").strip().lower()
+    is_map_view = view == "map"
+    include_total = _parse_bool(request.args.get("include_total"))
+    if include_total is None:
+        include_total = not is_map_view
 
     limit = _parse_int(request.args.get("limit"), DEFAULT_LIMIT) or DEFAULT_LIMIT
     offset = _parse_int(request.args.get("offset"), 0) or 0
@@ -83,44 +98,37 @@ def list_restaurants():
 
     db = get_db()
 
-    count_sql = f"""
-        {LATEST_SCORE_CTE}
-        SELECT COUNT(*) AS total
-        FROM restaurants r
-        LEFT JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
-        {where_sql}
-    """
-    total = db.execute(count_sql, params).fetchone()["total"]
+    total = None
+    if include_total:
+        count_sql = f"""
+            SELECT COUNT(*) AS total
+            FROM restaurants r
+            {LATEST_SCORE_JOIN}
+            {where_sql}
+        """
+        total = db.execute(count_sql, params).fetchone()["total"]
 
+    columns = MAP_LIST_COLUMNS if is_map_view else FULL_LIST_COLUMNS
+    order_sql = "" if is_map_view else "ORDER BY r.business_name COLLATE NOCASE"
     list_sql = f"""
-        {LATEST_SCORE_CTE}
         SELECT
-            r.business_id,
-            r.business_name,
-            r.business_address,
-            r.business_city,
-            r.business_state,
-            r.business_postal_code,
-            r.business_phone_number,
-            r.business_latitude,
-            r.business_longitude,
-            latest.inspection_score AS latest_inspection_score,
-            latest.inspection_date  AS latest_inspection_date
+            {columns}
         FROM restaurants r
-        LEFT JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
+        {LATEST_SCORE_JOIN}
         {where_sql}
-        ORDER BY r.business_name COLLATE NOCASE
+        {order_sql}
         LIMIT ? OFFSET ?
     """
     rows = db.execute(list_sql, params + [limit, offset]).fetchall()
+    results = rows_to_dicts(rows)
 
     return jsonify(
         {
-            "total": total,
+            "total": len(results) if total is None else total,
             "limit": limit,
             "offset": offset,
-            "count": len(rows),
-            "results": rows_to_dicts(rows),
+            "count": len(results),
+            "results": results,
         }
     )
 
@@ -204,13 +212,12 @@ def get_restaurant(business_id: str):
 
     restaurant = db.execute(
         f"""
-        {LATEST_SCORE_CTE}
         SELECT
             r.*,
             latest.inspection_score AS latest_inspection_score,
             latest.inspection_date  AS latest_inspection_date
         FROM restaurants r
-        LEFT JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
+        {LATEST_SCORE_JOIN}
         WHERE r.business_id = ?
         """,
         (business_id,),

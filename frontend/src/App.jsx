@@ -10,7 +10,7 @@ import {
 } from './landmarks';
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
-const MAP_POINTS_URL = `${API_BASE}/api/restaurants?has_coordinates=true&limit=10000`;
+const MAP_POINTS_URL = `${API_BASE}/api/restaurants?has_coordinates=true&limit=10000&view=map`;
 const META_URL = `${API_BASE}/api/meta`;
 const MAP_POLL_MS = 10 * 60 * 1000;
 
@@ -378,6 +378,27 @@ function restaurantsFromResponse(data) {
   return data?.results || data?.restaurants || data?.data || [];
 }
 
+function searchLoadedRestaurants(rows, query, limit = 10, pinnedIds) {
+  const q = String(query ?? '').trim().toLowerCase();
+  if (!q) return [];
+  const scored = [];
+  for (const r of rows) {
+    const name = String(r.business_name || '').toLowerCase();
+    const addr = String(r.business_address || '').toLowerCase();
+    let rank;
+    if (name.startsWith(q)) rank = 0;
+    else if (name.includes(q)) rank = 1;
+    else if (addr.includes(q)) rank = 2;
+    else continue;
+    const pinned = pinnedIds?.has(String(r.business_id)) ? 0 : 1;
+    scored.push({ r, rank, pinned, name });
+  }
+  scored.sort(
+    (a, b) => a.rank - b.rank || a.pinned - b.pinned || a.name.localeCompare(b.name)
+  );
+  return scored.slice(0, limit).map((row) => row.r);
+}
+
 function metaFingerprint(meta) {
   if (!meta || meta.status === 'error') return '';
   return `${meta.db_mtime ?? ''}:${meta.latest_inspection_date ?? ''}:${meta.restaurant_count ?? ''}`;
@@ -387,6 +408,7 @@ function App() {
   const mapRef = useRef(null);
   const searchInputRef = useRef(null);
   const hoveredBusinessIdRef = useRef(null);
+  const hoverTooltipElRef = useRef(null);
   const [restaurants, setRestaurants] = useState([]);
   const [restaurantsLoading, setRestaurantsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -476,6 +498,28 @@ function App() {
       'circle-stroke-opacity': 0,
     }),
     [dotRadiusHover]
+  );
+
+  const heatmapLayerLayout = useMemo(
+    () => ({
+      visibility: mapLayerMode === 'heatmap' ? 'visible' : 'none',
+    }),
+    [mapLayerMode]
+  );
+
+  const pinsLayerLayout = useMemo(
+    () => ({
+      visibility: mapLayerMode === 'pins' ? 'visible' : 'none',
+      'circle-sort-key': circleSortKeyForTarget(dotStackTarget),
+    }),
+    [mapLayerMode, dotStackTarget]
+  );
+
+  const hitLayerLayout = useMemo(
+    () => ({
+      visibility: mapLayerMode === 'heatmap' ? 'visible' : 'none',
+    }),
+    [mapLayerMode]
   );
 
   useEffect(() => {
@@ -681,29 +725,15 @@ function App() {
       setSearchLoading(false);
       return;
     }
-    let cancelled = false;
-    setSearchLoading(true);
-    axios
-      .get(`${API_BASE}/api/restaurants`, {
-        params: { search: debouncedSearch, limit: 10 },
-      })
-      .then((res) => {
-        if (cancelled) return;
-        const rows = res.data.results || [];
-        setSearchResults(rows);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        console.error('Search failed:', err);
-        setSearchResults([]);
-      })
-      .finally(() => {
-        if (!cancelled) setSearchLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedSearch]);
+    if (restaurantsLoading) {
+      setSearchLoading(true);
+      return;
+    }
+    setSearchLoading(false);
+    setSearchResults(
+      searchLoadedRestaurants(restaurants, debouncedSearch, 10, pinnedIdSet)
+    );
+  }, [debouncedSearch, restaurants, restaurantsLoading, pinnedIdSet]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -875,9 +905,12 @@ function App() {
           const postal_code = String(r.business_postal_code ?? '').trim();
           return {
             type: 'Feature',
+            id: r.business_id,
             geometry: { type: 'Point', coordinates: [lon, lat] },
             properties: {
-              ...r,
+              business_id: r.business_id,
+              business_name: r.business_name,
+              business_address: r.business_address || '',
               score: Number.isFinite(score) ? score : null,
               postal_code,
             },
@@ -1043,6 +1076,16 @@ function App() {
         return;
       }
 
+      map.getCanvas().style.cursor = 'pointer';
+
+      const x = event.point.x;
+      const y = event.point.y;
+      if (id === hoveredBusinessIdRef.current && hoverTooltipElRef.current) {
+        hoverTooltipElRef.current.style.left = `${x}px`;
+        hoverTooltipElRef.current.style.top = `${y}px`;
+        return;
+      }
+
       if (id !== hoveredBusinessIdRef.current) {
         clearDotHover(map);
         hoveredBusinessIdRef.current = id;
@@ -1060,8 +1103,8 @@ function App() {
       const scoreLabel =
         score != null && score !== '' ? String(score) : 'No score';
       setHoverTooltip({
-        x: event.point.x,
-        y: event.point.y,
+        x,
+        y,
         name,
         score,
         scoreLabel,
@@ -1277,28 +1320,21 @@ function App() {
               type="heatmap"
               paint={restaurantsHeatmapPaint}
               filter={scoreLayerFilter}
-              layout={{
-                visibility: mapLayerMode === 'heatmap' ? 'visible' : 'none',
-              }}
+              layout={heatmapLayerLayout}
             />
             <Layer
               id={RESTAURANTS_LAYER_ID}
               type="circle"
               paint={restaurantsCirclePaint}
               filter={scoreLayerFilter}
-              layout={{
-                visibility: mapLayerMode === 'pins' ? 'visible' : 'none',
-                'circle-sort-key': circleSortKeyForTarget(dotStackTarget),
-              }}
+              layout={pinsLayerLayout}
             />
             <Layer
               id={RESTAURANTS_HIT_LAYER_ID}
               type="circle"
               paint={restaurantHitCirclePaint}
               filter={scoreLayerFilter}
-              layout={{
-                visibility: mapLayerMode === 'heatmap' ? 'visible' : 'none',
-              }}
+              layout={hitLayerLayout}
             />
           </Source>
           {userLocation && (
@@ -1490,6 +1526,7 @@ function App() {
         </Map>
         {hoverTooltip && !popup && (
           <div
+            ref={hoverTooltipElRef}
             className="map-dot-tooltip"
             style={{
               left: hoverTooltip.x,
@@ -1679,7 +1716,14 @@ function App() {
               </p>
             ) : (
               <ul className="sidebar-pinned-list">
-                {pinnedRestaurants.map((r) => (
+                {pinnedRestaurants.map((r) => {
+                  const pinMapsHref = nativeMapsHref({
+                    lat: Number(r.business_latitude),
+                    lng: Number(r.business_longitude),
+                    name: r.business_name,
+                    address: r.business_address,
+                  });
+                  return (
                   <li key={`pin-list-${r.business_id}`}>
                     <button
                       type="button"
@@ -1697,6 +1741,18 @@ function App() {
                           : '—'}
                       </span>
                     </button>
+                    {pinMapsHref && (
+                      <a
+                        className="sidebar-pin-dir"
+                        href={pinMapsHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`Directions to ${r.business_name}`}
+                        title="Directions"
+                      >
+                        Go
+                      </a>
+                    )}
                     <button
                       type="button"
                       className="sidebar-unpin-btn"
@@ -1706,7 +1762,8 @@ function App() {
                       ×
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </section>
@@ -2100,6 +2157,7 @@ function App() {
                     onClick={() => handleSelectSearchResult(r)}
                   >
                     <span className="search-result-name">
+                      {isPinned(r.business_id) ? '★ ' : ''}
                       {r.business_name}
                     </span>
                     <span className="search-result-address">

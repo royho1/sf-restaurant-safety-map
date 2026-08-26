@@ -16,6 +16,51 @@ INDEX_STATEMENTS = (
     "ON violations (business_id)",
 )
 
+LATEST_SCORES_DDL = """
+CREATE TABLE IF NOT EXISTS latest_scores (
+    business_id TEXT PRIMARY KEY,
+    inspection_id TEXT,
+    inspection_date TEXT,
+    inspection_score INTEGER
+)
+"""
+
+LATEST_SCORES_INSERT = """
+INSERT INTO latest_scores (
+    business_id, inspection_id, inspection_date, inspection_score
+)
+SELECT business_id, inspection_id, inspection_date, inspection_score
+FROM (
+    SELECT
+        business_id,
+        inspection_id,
+        inspection_date,
+        inspection_score,
+        ROW_NUMBER() OVER (
+            PARTITION BY business_id
+            ORDER BY inspection_date DESC, inspection_id DESC
+        ) AS rn
+    FROM inspections
+    WHERE inspection_score IS NOT NULL
+)
+WHERE rn = 1
+"""
+
+
+def rebuild_latest_scores(conn: sqlite3.Connection) -> None:
+    """Materialize the latest scored inspection per restaurant.
+
+    List/stats/map queries join this table instead of running a window
+    function over all inspections on every request.
+    """
+    conn.execute("DROP TABLE IF EXISTS latest_scores")
+    conn.execute(LATEST_SCORES_DDL)
+    conn.execute(LATEST_SCORES_INSERT)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_latest_scores_score "
+        "ON latest_scores (inspection_score)"
+    )
+
 
 def _db_path() -> Path:
     return Path(current_app.config["DATABASE_PATH"])
@@ -30,6 +75,14 @@ def ensure_indexes(db_path: Path | None = None) -> None:
         conn.execute("PRAGMA foreign_keys = ON")
         for sql in INDEX_STATEMENTS:
             conn.execute(sql)
+        needs_scores = conn.execute(
+            """
+            SELECT 1 FROM sqlite_master
+            WHERE type = 'table' AND name = 'latest_scores'
+            """
+        ).fetchone() is None
+        if needs_scores:
+            rebuild_latest_scores(conn)
         conn.commit()
 
 
@@ -41,6 +94,7 @@ def get_db() -> sqlite3.Connection:
         conn = sqlite3.connect(uri, uri=True)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA cache_size = -16000")
         g.db = conn
     return g.db
 

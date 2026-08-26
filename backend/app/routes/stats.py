@@ -9,25 +9,7 @@ bp = Blueprint("stats", __name__, url_prefix="/api/stats")
 TOP_BOTTOM_RESTAURANTS = 3
 CITYWIDE_LOWEST_RESTAURANTS = 8
 
-# Same "latest scored inspection per restaurant" definition as /api/restaurants.
-LATEST_SCORED_INSPECTION_CTE = """
-WITH latest AS (
-    SELECT
-        business_id,
-        inspection_id,
-        inspection_date,
-        inspection_score,
-        ROW_NUMBER() OVER (
-            PARTITION BY business_id
-            ORDER BY inspection_date DESC, inspection_id DESC
-        ) AS rn
-    FROM inspections
-    WHERE inspection_score IS NOT NULL
-)
-"""
-
-RANKED_RESTAURANT_SELECT = f"""
-{LATEST_SCORED_INSPECTION_CTE}
+RANKED_RESTAURANT_SELECT = """
 SELECT
     r.business_id,
     r.business_name,
@@ -39,7 +21,7 @@ SELECT
     r.business_longitude,
     latest.inspection_score AS latest_inspection_score
 FROM restaurants r
-INNER JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
+INNER JOIN latest_scores latest ON latest.business_id = r.business_id
 WHERE latest.inspection_score IS NOT NULL
 """
 
@@ -50,8 +32,7 @@ def citywide_stats():
     db = get_db()
 
     row = db.execute(
-        f"""
-        {LATEST_SCORED_INSPECTION_CTE}
+        """
         SELECT
             COUNT(*) AS total_restaurants,
             AVG(latest.inspection_score) AS avg_latest_score,
@@ -69,7 +50,7 @@ def citywide_stats():
                 END
             ) AS score_below_70
         FROM restaurants r
-        LEFT JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
+        LEFT JOIN latest_scores latest ON latest.business_id = r.business_id
         """
     ).fetchone()
 
@@ -125,13 +106,12 @@ def neighborhood_stats():
         return jsonify({"error": "Unknown postal code"}), 404
 
     summary = db.execute(
-        f"""
-        {LATEST_SCORED_INSPECTION_CTE}
+        """
         SELECT
             COUNT(*) AS restaurant_count,
             AVG(latest.inspection_score) AS avg_latest_score
         FROM restaurants r
-        LEFT JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
+        LEFT JOIN latest_scores latest ON latest.business_id = r.business_id
         WHERE r.business_postal_code = ?
         """,
         (postal,),

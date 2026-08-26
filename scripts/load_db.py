@@ -149,6 +149,45 @@ def main() -> None:
                 "ON violations (business_id)"
             )
 
+            print("Materializing latest scored inspections...", flush=True)
+            cur.execute("DROP TABLE IF EXISTS latest_scores")
+            cur.execute(
+                """
+                CREATE TABLE latest_scores (
+                    business_id TEXT PRIMARY KEY,
+                    inspection_id TEXT,
+                    inspection_date TEXT,
+                    inspection_score INTEGER
+                )
+                """
+            )
+            cur.execute(
+                """
+                INSERT INTO latest_scores (
+                    business_id, inspection_id, inspection_date, inspection_score
+                )
+                SELECT business_id, inspection_id, inspection_date, inspection_score
+                FROM (
+                    SELECT
+                        business_id,
+                        inspection_id,
+                        inspection_date,
+                        inspection_score,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY business_id
+                            ORDER BY inspection_date DESC, inspection_id DESC
+                        ) AS rn
+                    FROM inspections
+                    WHERE inspection_score IS NOT NULL
+                )
+                WHERE rn = 1
+                """
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_latest_scores_score "
+                "ON latest_scores (inspection_score)"
+            )
+
             conn.commit()
 
             counts = {

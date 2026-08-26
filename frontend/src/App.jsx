@@ -2,6 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Marker, Popup, Source, Layer } from 'react-map-gl';
 import axios from 'axios';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import {
+  LANDMARK_MIN_ZOOM,
+  LandmarkPin,
+  SF_LANDMARKS,
+  landmarkPinSize,
+} from './landmarks';
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 const MAP_POINTS_URL = `${API_BASE}/api/restaurants?has_coordinates=true&limit=10000`;
@@ -95,16 +101,70 @@ const restaurantsHeatmapPaint = {
   ],
 };
 
+/** Continuous color so 90 and 100 are not the same green blob. */
 const circleColorExpression = [
   'case',
-  ['==', ['get', 'score'], null],
+  ['any', ['==', ['get', 'score'], null], ['!', ['has', 'score']]],
   '#9ca3af',
-  ['>=', ['get', 'score'], 90],
-  '#22c55e',
-  ['>=', ['get', 'score'], 70],
-  '#eab308',
-  '#ef4444',
+  [
+    'interpolate',
+    ['linear'],
+    ['to-number', ['get', 'score']],
+    50,
+    '#ef4444',
+    70,
+    '#f97316',
+    80,
+    '#eab308',
+    90,
+    '#84cc16',
+    96,
+    '#22c55e',
+    100,
+    '#166534',
+  ],
 ];
+
+function circleSortKeyForTarget(targetScore) {
+  return [
+    'case',
+    ['any', ['==', ['get', 'score'], null], ['!', ['has', 'score']]],
+    0,
+    [
+      '-',
+      110,
+      ['abs', ['-', ['to-number', ['get', 'score']], targetScore]],
+    ],
+  ];
+}
+
+function circleRadiusByScore(base) {
+  return [
+    'interpolate',
+    ['linear'],
+    ['coalesce', ['to-number', ['get', 'score']], 100],
+    50,
+    base + 3.25,
+    80,
+    base + 1.25,
+    90,
+    base,
+    100,
+    Math.max(3.25, base - 0.75),
+  ];
+}
+
+function stackBandLabel(target) {
+  if (target < 70) return 'Reds on top';
+  if (target < 90) return 'Yellows on top';
+  return 'Greens on top';
+}
+
+function stackLegendHint(target) {
+  if (target < 70) return 'Weaker scores sit on top';
+  if (target < 90) return 'Mid-range scores sit on top';
+  return 'Higher scores sit on top';
+}
 
 const DOT_RADIUS_DESKTOP = 5;
 const DOT_RADIUS_MOBILE = 7;
@@ -186,14 +246,64 @@ function formatInspectionDate(iso) {
   return Number.isNaN(d.getTime()) ? raw : d.toLocaleDateString();
 }
 
-function googleMapsHref({ lat, lng, address }) {
-  if (Number.isFinite(lat) && Number.isFinite(lng)) {
-    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+function prefersAppleMaps() {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/.test(ua)) return true;
+  if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) {
+    return true;
   }
-  if (address) {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  return /Macintosh|Mac OS X/.test(ua) && !/Windows/.test(ua);
+}
+
+function nativeMapsHref({ lat, lng, name, address }) {
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+  const label = [name, address].filter(Boolean).join(', ');
+  if (!hasCoords && !label) return null;
+  const q = encodeURIComponent(label || `${lat},${lng}`);
+  if (prefersAppleMaps()) {
+    if (hasCoords) {
+      return `https://maps.apple.com/?daddr=${lat},${lng}&q=${q}&dirflg=d`;
+    }
+    return `https://maps.apple.com/?daddr=${q}&dirflg=d`;
   }
-  return null;
+  if (hasCoords) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=`;
+  }
+  return `https://www.google.com/maps/dir/?api=1&destination=${q}`;
+}
+
+const PINNED_STORAGE_KEY = 'sf-restaurant-safety-pinned';
+
+function loadPinnedRestaurants() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PINNED_STORAGE_KEY) || '[]');
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((row) => row && row.business_id);
+  } catch {
+    return [];
+  }
+}
+
+function toPinnedRestaurant(source, extras = {}) {
+  const lat = Number(
+    source.lat ?? source.business_latitude ?? source.latitude
+  );
+  const lng = Number(
+    source.lng ?? source.business_longitude ?? source.longitude
+  );
+  return {
+    business_id: source.business_id || source.businessId,
+    business_name: source.business_name || source.name || 'Restaurant',
+    business_address: source.business_address || source.address || '',
+    business_latitude: Number.isFinite(lat) ? lat : null,
+    business_longitude: Number.isFinite(lng) ? lng : null,
+    latest_inspection_score:
+      source.latest_inspection_score ?? source.score ?? null,
+    pinnedAt: Date.now(),
+    ...extras,
+  };
 }
 
 /** API uses values like "High Risk"; show as High / Moderate / Low. */
@@ -213,11 +323,12 @@ function riskCategoryClassName(label) {
   return 'violation-risk violation-risk--other';
 }
 
-/** Matches map dot colors: green 90+, yellow 70–89, red below 70, gray no score. */
+/** Matches map coloring: 96+ dark green, 90–95 green, 70–89 yellow, below 70 red. */
 function scoreClassName(score) {
   if (score == null || score === '') return 'popup-score popup-score--na';
   const n = Number(score);
   if (!Number.isFinite(n)) return 'popup-score popup-score--na';
+  if (n >= 96) return 'popup-score popup-score--excellent';
   if (n >= 90) return 'popup-score popup-score--good';
   if (n >= 70) return 'popup-score popup-score--mid';
   return 'popup-score popup-score--bad';
@@ -227,9 +338,18 @@ function tooltipScoreClassName(score) {
   if (score == null || score === '') return 'map-dot-tooltip-score map-dot-tooltip-score--na';
   const n = Number(score);
   if (!Number.isFinite(n)) return 'map-dot-tooltip-score map-dot-tooltip-score--na';
+  if (n >= 96) return 'map-dot-tooltip-score map-dot-tooltip-score--excellent';
   if (n >= 90) return 'map-dot-tooltip-score map-dot-tooltip-score--good';
   if (n >= 70) return 'map-dot-tooltip-score map-dot-tooltip-score--mid';
   return 'map-dot-tooltip-score map-dot-tooltip-score--bad';
+}
+
+function formatDataThrough(iso) {
+  if (iso == null || iso === '') return null;
+  const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+  if (!ymd) return null;
+  const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+  return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
 /** Valid San Francisco ZIPs from API data: exactly 5 digits, prefix 941. */
@@ -298,7 +418,12 @@ function App() {
   const [neighborhoodError, setNeighborhoodError] = useState(null);
   const [mapFilters, setMapFilters] = useState(() => ({ ...defaultMapFilters }));
   const [mapLayerMode, setMapLayerMode] = useState('pins');
+  const [dotStackTarget, setDotStackTarget] = useState(50);
+  const [uniformDotSize, setUniformDotSize] = useState(false);
+  const [pinnedRestaurants, setPinnedRestaurants] = useState(loadPinnedRestaurants);
+  const [mapZoom, setMapZoom] = useState(SF_CENTER.zoom);
   const [statsEpoch, setStatsEpoch] = useState(0);
+  const [dataMeta, setDataMeta] = useState(null);
   const mapDataFingerprint = useRef('');
   const splashStartedAt = useRef(
     typeof performance !== 'undefined' ? performance.now() : 0
@@ -352,6 +477,45 @@ function App() {
     }),
     [dotRadiusHover]
   );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        PINNED_STORAGE_KEY,
+        JSON.stringify(pinnedRestaurants)
+      );
+    } catch {
+      /* private mode / quota */
+    }
+  }, [pinnedRestaurants]);
+
+  const pinnedIdSet = useMemo(
+    () => new Set(pinnedRestaurants.map((row) => String(row.business_id))),
+    [pinnedRestaurants]
+  );
+
+  const isPinned = useCallback(
+    (id) => (id == null ? false : pinnedIdSet.has(String(id))),
+    [pinnedIdSet]
+  );
+
+  const togglePinnedRestaurant = useCallback((record) => {
+    const id = record?.business_id || record?.businessId;
+    if (!id) return;
+    setPinnedRestaurants((prev) => {
+      const exists = prev.some((row) => String(row.business_id) === String(id));
+      if (exists) {
+        return prev.filter((row) => String(row.business_id) !== String(id));
+      }
+      return [toPinnedRestaurant(record), ...prev];
+    });
+  }, []);
+
+  const handleMapMove = useCallback((evt) => {
+    const z = evt.viewState?.zoom;
+    if (!Number.isFinite(z)) return;
+    setMapZoom((prev) => (Math.abs(prev - z) < 0.1 ? prev : z));
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
@@ -456,6 +620,7 @@ function App() {
     async ({ initial } = {}) => {
       try {
         const { data: meta } = await axios.get(META_URL);
+        setDataMeta(meta);
         const fp = metaFingerprint(meta);
         if (!fp) return;
         if (initial) {
@@ -689,7 +854,7 @@ function App() {
     const map = mapRef.current?.getMap();
     clearDotHover(map);
     setHoverTooltip(null);
-  }, [mapFilters, mapLayerMode, clearDotHover]);
+  }, [mapFilters, mapLayerMode, dotStackTarget, uniformDotSize, clearDotHover]);
 
   const geojson = useMemo(() => {
     return {
@@ -723,11 +888,13 @@ function App() {
   }, [restaurants]);
 
   const restaurantsCirclePaint = useMemo(() => {
+    const radiusCore = uniformDotSize
+      ? dotRadiusBase
+      : circleRadiusByScore(dotRadiusBase);
     const radiusExpr = [
-      'case',
-      ['boolean', ['feature-state', 'hover'], false],
-      dotRadiusHover,
-      dotRadiusBase,
+      '+',
+      radiusCore,
+      ['case', ['boolean', ['feature-state', 'hover'], false], 3, 0],
     ];
     if (!zipForMapPaint) {
       return {
@@ -757,7 +924,7 @@ function App() {
       'circle-stroke-color': '#ffffff',
       'circle-stroke-opacity': ['case', inZip, 1, 0.35],
     };
-  }, [zipForMapPaint, dotRadiusBase, dotRadiusHover]);
+  }, [zipForMapPaint, dotRadiusBase, uniformDotSize]);
 
   const loadPopupFromInspectionsEndpoint = async (
     businessId,
@@ -769,6 +936,7 @@ function App() {
     clearDotHover(map);
     setHoverTooltip(null);
     setPopup({
+      businessId,
       lng: lon,
       lat,
       loading: true,
@@ -784,11 +952,15 @@ function App() {
         `${API_BASE}/api/restaurants/${encodeURIComponent(businessId)}/inspections`
       );
       const latest = data.latest_inspection;
+      const scoredInspection = data.scored_inspection;
       const history = Array.isArray(data.inspections) ? data.inspections : [];
-      const scored = history.find(
-        (insp) => insp.inspection_score != null && insp.inspection_score !== ''
-      );
+      const scored =
+        scoredInspection ||
+        history.find(
+          (insp) => insp.inspection_score != null && insp.inspection_score !== ''
+        );
       setPopup({
+        businessId,
         lng: lon,
         lat,
         loading: false,
@@ -796,20 +968,21 @@ function App() {
         address: formatAddress(data),
         score: scored?.inspection_score ?? latest?.inspection_score ?? null,
         date: scored?.inspection_date ?? latest?.inspection_date ?? null,
-        inspectionType: latest?.inspection_type ?? scored?.inspection_type ?? null,
+        inspectionType: scored?.inspection_type ?? latest?.inspection_type ?? null,
         lastVisit:
           latest?.inspection_date &&
           scored?.inspection_date &&
           latest.inspection_date !== scored.inspection_date
             ? latest.inspection_date
             : null,
-        violations: latest?.violations ?? [],
+        violations: scored?.violations ?? latest?.violations ?? [],
         history,
         fetchError: false,
       });
     } catch (err) {
       console.error(err);
       setPopup({
+        businessId,
         lng: lon,
         lat,
         loading: false,
@@ -993,6 +1166,7 @@ function App() {
         1
       )
     : 1;
+  const dataThrough = formatDataThrough(dataMeta?.latest_inspection_date);
 
   const toggleSidebar = () => setSidebarOpen((o) => !o);
 
@@ -1063,12 +1237,17 @@ function App() {
 
   const mapStyleUrl = basemapDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
   const popupMapsHref = popup
-    ? googleMapsHref({
+    ? nativeMapsHref({
         lat: popup.lat,
         lng: popup.lng,
+        name: popup.name,
         address: popup.address,
       })
     : null;
+  const popupIsPinned = popup?.businessId ? isPinned(popup.businessId) : false;
+  const showLandmarks =
+    mapZoom >= LANDMARK_MIN_ZOOM && mapLayerMode !== 'off';
+  const landmarkSize = landmarkPinSize(mapZoom);
 
   return (
     <div
@@ -1085,6 +1264,7 @@ function App() {
           onMouseMove={handleMapMouseMove}
           onMouseLeave={handleMapMouseLeave}
           onLoad={() => setMapStyleReady(true)}
+          onMove={handleMapMove}
         >
           <Source
             id="restaurants"
@@ -1108,6 +1288,7 @@ function App() {
               filter={scoreLayerFilter}
               layout={{
                 visibility: mapLayerMode === 'pins' ? 'visible' : 'none',
+                'circle-sort-key': circleSortKeyForTarget(dotStackTarget),
               }}
             />
             <Layer
@@ -1132,6 +1313,46 @@ function App() {
               </div>
             </Marker>
           )}
+          {showLandmarks &&
+            SF_LANDMARKS.map((place) => (
+              <Marker
+                key={place.id}
+                longitude={place.lng}
+                latitude={place.lat}
+                anchor="bottom"
+                style={{ pointerEvents: 'none' }}
+              >
+                <LandmarkPin
+                  name={place.name}
+                  icon={place.icon}
+                  size={landmarkSize}
+                />
+              </Marker>
+            ))}
+          {pinnedRestaurants.map((place) => {
+            const lat = Number(place.business_latitude);
+            const lng = Number(place.business_longitude);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+            return (
+              <Marker
+                key={`pin-${place.business_id}`}
+                longitude={lng}
+                latitude={lat}
+                anchor="bottom"
+                onClick={(e) => {
+                  e.originalEvent?.stopPropagation?.();
+                  handleSelectRankedRestaurant(place);
+                }}
+              >
+                <div
+                  className="pinned-map-marker"
+                  title={place.business_name}
+                >
+                  <span aria-hidden>★</span>
+                </div>
+              </Marker>
+            );
+          })}
           {popup && (
             <Popup
               longitude={popup.lng}
@@ -1151,16 +1372,36 @@ function App() {
                 ) : (
                   <>
                     <p className="popup-address">{popup.address || '—'}</p>
-                    {popupMapsHref && (
-                      <a
-                        className="popup-maps-link"
-                        href={popupMapsHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open in Google Maps
-                      </a>
-                    )}
+                    <div className="popup-actions">
+                      {popup.businessId && (
+                        <button
+                          type="button"
+                          className={`popup-action-btn${popupIsPinned ? ' is-pinned' : ''}`}
+                          onClick={() =>
+                            togglePinnedRestaurant({
+                              business_id: popup.businessId,
+                              name: popup.name,
+                              address: popup.address,
+                              lat: popup.lat,
+                              lng: popup.lng,
+                              score: popup.score,
+                            })
+                          }
+                        >
+                          {popupIsPinned ? 'Unpin' : 'Pin'}
+                        </button>
+                      )}
+                      {popupMapsHref && (
+                        <a
+                          className="popup-action-btn popup-action-btn--primary"
+                          href={popupMapsHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Directions
+                        </a>
+                      )}
+                    </div>
                     <dl className="popup-meta">
                       <div>
                         <dt>Latest score</dt>
@@ -1192,7 +1433,7 @@ function App() {
                       </p>
                     )}
                     <div className="popup-violations">
-                      <h3>Violations (latest inspection)</h3>
+                      <h3>Violations (latest scored inspection)</h3>
                       {popup.violations.length === 0 ? (
                         <p className="popup-empty">No violations recorded.</p>
                       ) : (
@@ -1431,6 +1672,45 @@ function App() {
         </div>
         <div className="sidebar-panel-body">
           <section className="sidebar-section">
+            <h3 className="sidebar-section-title">Pinned restaurants</h3>
+            {pinnedRestaurants.length === 0 ? (
+              <p className="sidebar-muted">
+                Pin a place from its inspection popup to save it here.
+              </p>
+            ) : (
+              <ul className="sidebar-pinned-list">
+                {pinnedRestaurants.map((r) => (
+                  <li key={`pin-list-${r.business_id}`}>
+                    <button
+                      type="button"
+                      className="sidebar-rank-btn"
+                      onClick={() => handleSelectRankedRestaurant(r)}
+                      title={`Show ${r.business_name} on the map`}
+                    >
+                      <span className="sidebar-rank-name">{r.business_name}</span>
+                      <span
+                        className={`sidebar-rank-score ${scoreClassName(r.latest_inspection_score)}`}
+                      >
+                        {r.latest_inspection_score != null &&
+                        r.latest_inspection_score !== ''
+                          ? r.latest_inspection_score
+                          : '—'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="sidebar-unpin-btn"
+                      onClick={() => togglePinnedRestaurant(r)}
+                      aria-label={`Unpin ${r.business_name}`}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className="sidebar-section">
             <h3 className="sidebar-section-title">Citywide overview</h3>
             {statsError && (
               <p className="sidebar-muted sidebar-error">{statsError}</p>
@@ -1452,6 +1732,9 @@ function App() {
                       : '—'}
                   </strong>
                 </p>
+                {dataThrough && (
+                  <p className="sidebar-muted">Scores through {dataThrough}</p>
+                )}
                 <p className="sidebar-chart-label">Score distribution</p>
                 <div className="sidebar-bars" role="img" aria-label="Score distribution">
                   {[
@@ -1479,6 +1762,34 @@ function App() {
                     );
                   })}
                 </div>
+                <p className="sidebar-chart-label">Lowest scores citywide</p>
+                <p className="sidebar-help">
+                  Most places score 90+. These are the inspections that stand
+                  out.
+                </p>
+                {(citywideStats.lowest_restaurants || []).length === 0 ? (
+                  <p className="sidebar-muted">No scored restaurants.</p>
+                ) : (
+                  <ol className="sidebar-rank-list">
+                    {citywideStats.lowest_restaurants.map((r) => (
+                      <li key={`city-low-${r.business_id}`}>
+                        <button
+                          type="button"
+                          className="sidebar-rank-btn"
+                          onClick={() => handleSelectRankedRestaurant(r)}
+                          title={`Show ${r.business_name} on the map`}
+                        >
+                          <span className="sidebar-rank-name">{r.business_name}</span>
+                          <span
+                            className={`sidebar-rank-score ${scoreClassName(r.latest_inspection_score)}`}
+                          >
+                            {r.latest_inspection_score}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </>
             )}
           </section>
@@ -1619,6 +1930,20 @@ function App() {
                 <button
                   type="button"
                   className="sidebar-pill-btn"
+                  onClick={() =>
+                    setMapFilters({
+                      good: false,
+                      mid: true,
+                      bad: true,
+                      noScore: false,
+                    })
+                  }
+                >
+                  Below 90
+                </button>
+                <button
+                  type="button"
+                  className="sidebar-pill-btn"
                   onClick={() => setMapFilters({ ...defaultMapFilters })}
                 >
                   Select All
@@ -1640,7 +1965,8 @@ function App() {
               </div>
             </div>
             <p className="sidebar-help">
-              Show dots by latest inspection score category.
+              Show dots by latest inspection score. 90+ is still good on the
+              LIVES scale; colors get darker green as scores approach 100.
             </p>
             <ul className="sidebar-checklist">
               {[
@@ -1661,6 +1987,41 @@ function App() {
                 </li>
               ))}
             </ul>
+            <div className="sidebar-dot-display">
+              <label className="sidebar-slider-label" htmlFor="dot-stack-slider">
+                <span>On top</span>
+                <span className="sidebar-slider-value">
+                  {stackBandLabel(dotStackTarget)}
+                </span>
+              </label>
+              <input
+                id="dot-stack-slider"
+                className="sidebar-stack-slider"
+                type="range"
+                min="50"
+                max="100"
+                step="1"
+                value={dotStackTarget}
+                aria-valuemin={50}
+                aria-valuemax={100}
+                aria-valuenow={dotStackTarget}
+                aria-valuetext={stackBandLabel(dotStackTarget)}
+                onChange={(e) => setDotStackTarget(Number(e.target.value))}
+              />
+              <div className="sidebar-stack-labels" aria-hidden>
+                <span>Red</span>
+                <span>Yellow</span>
+                <span>Green</span>
+              </div>
+              <label className="sidebar-check-label sidebar-check-label--spaced">
+                <input
+                  type="checkbox"
+                  checked={uniformDotSize}
+                  onChange={(e) => setUniformDotSize(e.target.checked)}
+                />
+                Same size for every dot
+              </label>
+            </div>
           </section>
         </div>
       </aside>
@@ -1797,9 +2158,17 @@ function App() {
             <div className="map-legend-title">
               Inspection score ({restaurants.length})
             </div>
-            <LegendItem color="#22c55e" label="90+" />
-            <LegendItem color="#eab308" label="70–89" />
-            <LegendItem color="#ef4444" label="Below 70" />
+            <p className="map-legend-hint">
+              {dataThrough
+                ? `Through ${dataThrough}. ${stackLegendHint(dotStackTarget)}.`
+                : stackLegendHint(dotStackTarget)}
+            </p>
+            <div className="legend-score-bar" aria-hidden />
+            <div className="legend-heat-labels">
+              <span>Low</span>
+              <span>90</span>
+              <span>100</span>
+            </div>
             <LegendItem color="#9ca3af" label="No score" />
           </>
         )}

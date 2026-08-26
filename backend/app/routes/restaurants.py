@@ -170,22 +170,31 @@ def get_restaurant_inspections(business_id: str):
     ]
     if not inspections:
         payload["latest_inspection"] = None
+        payload["scored_inspection"] = None
         return jsonify(payload)
 
-    latest = inspections[0]
-    violation_rows = db.execute(
-        """
-        SELECT violation_id, inspection_id, violation_description, risk_category
-        FROM violations
-        WHERE inspection_id = ?
-        ORDER BY violation_id
-        """,
-        (latest["inspection_id"],),
-    ).fetchall()
+    def inspection_with_violations(row):
+        if row is None:
+            return None
+        violation_rows = db.execute(
+            """
+            SELECT violation_id, inspection_id, violation_description, risk_category
+            FROM violations
+            WHERE inspection_id = ?
+            ORDER BY violation_id
+            """,
+            (row["inspection_id"],),
+        ).fetchall()
+        item = dict(row)
+        item["violations"] = rows_to_dicts(violation_rows)
+        return item
 
-    latest_payload = dict(latest)
-    latest_payload["violations"] = rows_to_dicts(violation_rows)
-    payload["latest_inspection"] = latest_payload
+    scored_row = next(
+        (row for row in inspections if row["inspection_score"] is not None),
+        None,
+    )
+    payload["latest_inspection"] = inspection_with_violations(inspections[0])
+    payload["scored_inspection"] = inspection_with_violations(scored_row)
     return jsonify(payload)
 
 

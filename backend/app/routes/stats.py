@@ -7,6 +7,7 @@ from ..utils.db import get_db, rows_to_dicts
 bp = Blueprint("stats", __name__, url_prefix="/api/stats")
 
 TOP_BOTTOM_RESTAURANTS = 3
+CITYWIDE_LOWEST_RESTAURANTS = 8
 
 # Same "latest scored inspection per restaurant" definition as /api/restaurants.
 LATEST_SCORED_INSPECTION_CTE = """
@@ -23,6 +24,23 @@ WITH latest AS (
     FROM inspections
     WHERE inspection_score IS NOT NULL
 )
+"""
+
+RANKED_RESTAURANT_SELECT = f"""
+{LATEST_SCORED_INSPECTION_CTE}
+SELECT
+    r.business_id,
+    r.business_name,
+    r.business_address,
+    r.business_city,
+    r.business_state,
+    r.business_postal_code,
+    r.business_latitude,
+    r.business_longitude,
+    latest.inspection_score AS latest_inspection_score
+FROM restaurants r
+INNER JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
+WHERE latest.inspection_score IS NOT NULL
 """
 
 
@@ -56,6 +74,16 @@ def citywide_stats():
     ).fetchone()
 
     avg = row["avg_latest_score"]
+    lowest_rows = db.execute(
+        RANKED_RESTAURANT_SELECT
+        + """
+          AND r.business_latitude IS NOT NULL
+          AND r.business_longitude IS NOT NULL
+        ORDER BY latest.inspection_score ASC, r.business_name COLLATE NOCASE
+        LIMIT ?
+        """,
+        (CITYWIDE_LOWEST_RESTAURANTS,),
+    ).fetchall()
     return jsonify(
         {
             "total_restaurants": row["total_restaurants"],
@@ -66,6 +94,7 @@ def citywide_stats():
                 "below_70": row["score_below_70"],
                 "no_score": row["no_score"],
             },
+            "lowest_restaurants": rows_to_dicts(lowest_rows),
         }
     )
 
@@ -108,23 +137,12 @@ def neighborhood_stats():
         (postal,),
     ).fetchone()
 
-    ranked_select = f"""
-        {LATEST_SCORED_INSPECTION_CTE}
-        SELECT
-            r.business_id,
-            r.business_name,
-            r.business_address,
-            r.business_city,
-            r.business_state,
-            r.business_postal_code,
-            r.business_latitude,
-            r.business_longitude,
-            latest.inspection_score AS latest_inspection_score
-        FROM restaurants r
-        INNER JOIN latest ON latest.business_id = r.business_id AND latest.rn = 1
-        WHERE r.business_postal_code = ?
-          AND latest.inspection_score IS NOT NULL
-    """
+    ranked_select = (
+        RANKED_RESTAURANT_SELECT
+        + """
+        AND r.business_postal_code = ?
+        """
+    )
     top_sql = ranked_select + """
         ORDER BY latest.inspection_score DESC, r.business_name COLLATE NOCASE
         LIMIT ?

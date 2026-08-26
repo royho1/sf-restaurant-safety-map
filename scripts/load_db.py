@@ -1,5 +1,6 @@
 """Load the cleaned CSVs into a SQLite database at backend/db/safety.db."""
 
+import os
 import sqlite3
 from pathlib import Path
 
@@ -95,7 +96,11 @@ def load_violations() -> pd.DataFrame:
 
 def main() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    print(f"Opening database at {DB_PATH}", flush=True)
+    tmp_path = DB_PATH.with_name(DB_PATH.name + ".tmp")
+    if tmp_path.exists():
+        tmp_path.unlink()
+
+    print(f"Opening database at {tmp_path}", flush=True)
 
     print("Reading CSVs...", flush=True)
     restaurants = load_restaurants()
@@ -108,47 +113,54 @@ def main() -> None:
         flush=True,
     )
 
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute("PRAGMA foreign_keys = ON")
-        cur = conn.cursor()
+    try:
+        with sqlite3.connect(tmp_path) as conn:
+            conn.execute("PRAGMA foreign_keys = ON")
+            cur = conn.cursor()
 
-        for table in ("violations", "inspections", "restaurants"):
-            print(f"Dropping table if exists: {table}", flush=True)
-            cur.execute(f"DROP TABLE IF EXISTS {table}")
+            for table in ("violations", "inspections", "restaurants"):
+                print(f"Dropping table if exists: {table}", flush=True)
+                cur.execute(f"DROP TABLE IF EXISTS {table}")
 
-        for table, ddl in SCHEMA.items():
-            print(f"Creating table: {table}", flush=True)
-            cur.execute(ddl)
+            for table, ddl in SCHEMA.items():
+                print(f"Creating table: {table}", flush=True)
+                cur.execute(ddl)
 
-        print("Inserting rows...", flush=True)
-        restaurants.to_sql("restaurants", conn, if_exists="append", index=False)
-        inspections.to_sql("inspections", conn, if_exists="append", index=False)
-        violations.to_sql("violations", conn, if_exists="append", index=False)
+            print("Inserting rows...", flush=True)
+            restaurants.to_sql("restaurants", conn, if_exists="append", index=False)
+            inspections.to_sql("inspections", conn, if_exists="append", index=False)
+            violations.to_sql("violations", conn, if_exists="append", index=False)
 
-        print("Creating indexes...", flush=True)
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_inspections_business_date "
-            "ON inspections (business_id, inspection_date DESC)"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_restaurants_postal "
-            "ON restaurants (business_postal_code)"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_violations_inspection "
-            "ON violations (inspection_id)"
-        )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS idx_violations_business "
-            "ON violations (business_id)"
-        )
+            print("Creating indexes...", flush=True)
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_inspections_business_date "
+                "ON inspections (business_id, inspection_date DESC)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_restaurants_postal "
+                "ON restaurants (business_postal_code)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_violations_inspection "
+                "ON violations (inspection_id)"
+            )
+            cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_violations_business "
+                "ON violations (business_id)"
+            )
 
-        conn.commit()
+            conn.commit()
 
-        counts = {
-            t: cur.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
-            for t in ("restaurants", "inspections", "violations")
-        }
+            counts = {
+                t: cur.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
+                for t in ("restaurants", "inspections", "violations")
+            }
+
+        os.replace(tmp_path, DB_PATH)
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink()
+        raise
 
     print()
     print("Loaded row counts:")

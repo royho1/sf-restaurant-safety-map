@@ -392,12 +392,28 @@ body,
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 8px;
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--ui-border);
   background: var(--ui-bg);
   box-shadow: var(--ui-shadow);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-brand:hover {
+  border-color: var(--ui-border-hover);
+  background: var(--ui-hover-surface);
+}
+
+.app-brand:focus-visible {
+  outline: 2px solid var(--ui-focus-ring);
+  outline-offset: 2px;
 }
 
 .app-brand-mark {
@@ -411,6 +427,7 @@ body,
 }
 
 .app-brand-title {
+  display: block;
   margin: 0;
   font-size: 13px;
   font-weight: 700;
@@ -420,6 +437,7 @@ body,
 }
 
 .app-brand-sub {
+  display: block;
   margin: 1px 0 0;
   font-size: 11px;
   color: var(--ui-text-muted);

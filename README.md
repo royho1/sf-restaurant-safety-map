@@ -107,6 +107,8 @@ PORT=8080 python run.py
 python run.py --host 0.0.0.0 --port 5050 --no-debug
 SAFETY_DB_PATH=/abs/path/to/safety.db python run.py
 CORS_ORIGINS=http://localhost:5173 python run.py
+DATA_REFRESH_HOURS=0 python run.py          # disable background DataSF checks
+DATA_REFRESH_HOURS=6 python run.py          # check every 6 hours instead of 24
 ```
 
 Sanity check: `curl http://localhost:5001/api/health` returns `{"status":"ok"}`. Returns 503 if `safety.db` is missing.
@@ -140,30 +142,39 @@ In local dev, Vite proxies `/api` to `http://127.0.0.1:5001`, so you can leave `
 VITE_API_BASE=http://localhost:5001
 ```
 
-### 3. (Optional) Refresh the data from DataSF
+### 3. Keep the map in sync with DataSF
 
-The committed CSVs are a snapshot. To pull the latest inspections and rebuild from scratch:
+The map reads SQLite, not DataSF directly. When the published dataset changes, rebuild with:
 
 ```bash
 pip install -r scripts/requirements.txt
-
-python scripts/fetch_data.py       # paginates the SODA API into data/raw/inspections_raw.json
-python scripts/clean_data.py       # normalizes, then geocodes addresses missing lat/lng via Nominatim
-python scripts/load_db.py          # rebuilds backend/db/safety.db
+python scripts/refresh_data.py          # no-op if DataSF has not published new rows
+python scripts/refresh_data.py --force  # fetch, clean, and rebuild anyway
 ```
 
-`clean_data.py` flags:
-- `--skip-geocode` — skip the Nominatim step entirely (fast, but new restaurants without coordinates won't appear on the map).
-- `--max-geocodes N` — cap NEW network calls at N (cache hits are free). Useful for smoke-testing.
+That is fetch → clean → load, plus a revision stamp at `data/processed/source_revision.json`. `load_db.py` writes a temp file then replaces `backend/db/safety.db`, so a running API can pick up the new snapshot.
 
-Geocoding rate-limits to 1 request/second per Nominatim's usage policy and caches every result (hits and confirmed misses) in `data/processed/geocode_cache.json`, so re-runs only query addresses they haven't seen. A full first-time geocode of all missing addresses takes roughly an hour; subsequent runs finish in seconds.
+While the API is running, a background check runs every 24 hours (`DATA_REFRESH_HOURS`; set `0` to disable). The frontend also polls `/api/meta` every 10 minutes (and when you come back to the tab) and reloads pins/stats if the database changed.
+
+A Monday GitHub Action does the same refresh and commits CSV updates when the source revision changes.
+
+`clean_data.py` flags (also accepted by `refresh_data.py`):
+- `--skip-geocode` — skip Nominatim (fast; new restaurants without coordinates will not appear on the map).
+- `--max-geocodes N` — cap NEW network calls at N (cache hits are free).
+
+Geocoding rate-limits to 1 request/second per Nominatim's usage policy and caches every result in `data/processed/geocode_cache.json`. A full first-time geocode of all missing addresses takes roughly an hour; later runs only look up new addresses.
+
+The current feed (`pyih-qa8i`) is DataSF's historical LIVES numeric-score dataset (2016–2019) and is no longer receiving new inspections. The city now publishes [Health Inspection Scores (2024–Present)](https://data.sfgov.org/Health-and-Social-Services/Health-Inspection-Scores-2024-Present-/tvy3-wexg) (`tvy3-wexg`) using Pass / Conditional Pass / Closure instead of 0–100 scores. Routine refresh will follow `pyih-qa8i` if that view ever updates; switching the map to the live 2024 feed is a separate schema change.
 
 ## API reference
 
 All endpoints are JSON. Base URL in development: `http://localhost:5001`.
 
 ### `GET /api/health`
-Liveness check. Returns `{"status": "ok"}`.
+Liveness check. Returns `{"status": "ok"}`. Returns 503 if `safety.db` is missing.
+
+### `GET /api/meta`
+Snapshot fingerprint for the map. Returns restaurant/inspection counts, `latest_inspection_date`, and `db_mtime` (unix timestamp of the database file). The frontend uses this to reload pins when a refresh replaces the DB.
 
 ### `GET /api/restaurants`
 Paginated, filterable list of restaurants. Each row includes the latest scored inspection (joined via a `ROW_NUMBER() OVER (PARTITION BY business_id ORDER BY inspection_date DESC)` CTE).

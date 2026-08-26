@@ -14,7 +14,10 @@ def _split_origins(raw: str) -> list[str]:
 
 
 class Config:
+    PROJECT_ROOT = PROJECT_ROOT
     DATABASE_PATH = Path(os.environ.get("SAFETY_DB_PATH", DEFAULT_DB_PATH))
     JSON_SORT_KEYS = False
     # Comma-separated list. Empty means allow any origin (local-dev default).
     CORS_ORIGINS = _split_origins(os.environ.get("CORS_ORIGINS", ""))
+    # Hours between DataSF refresh attempts. 0 disables. Unchanged source is a no-op.
+    DATA_REFRESH_HOURS = float(os.environ.get("DATA_REFRESH_HOURS", "24"))

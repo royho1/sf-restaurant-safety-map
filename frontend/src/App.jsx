@@ -5,6 +5,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 const MAP_POINTS_URL = `${API_BASE}/api/restaurants?has_coordinates=true&limit=10000`;
+const META_URL = `${API_BASE}/api/meta`;
+const MAP_POLL_MS = 10 * 60 * 1000;
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -251,6 +253,16 @@ function isSfZipSearchQuery(query) {
   return s.length === 5 && /^\d{5}$/.test(s) && s.startsWith('941');
 }
 
+function restaurantsFromResponse(data) {
+  if (Array.isArray(data)) return data;
+  return data?.results || data?.restaurants || data?.data || [];
+}
+
+function metaFingerprint(meta) {
+  if (!meta || meta.status === 'error') return '';
+  return `${meta.db_mtime ?? ''}:${meta.latest_inspection_date ?? ''}:${meta.restaurant_count ?? ''}`;
+}
+
 function App() {
   const mapRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -286,10 +298,16 @@ function App() {
   const [neighborhoodError, setNeighborhoodError] = useState(null);
   const [mapFilters, setMapFilters] = useState(() => ({ ...defaultMapFilters }));
   const [mapLayerMode, setMapLayerMode] = useState('pins');
+  const [statsEpoch, setStatsEpoch] = useState(0);
+  const mapDataFingerprint = useRef('');
   const splashStartedAt = useRef(
     typeof performance !== 'undefined' ? performance.now() : 0
   );
-  const [splash, setSplash] = useState({ show: true, fading: false });
+  const [splash, setSplash] = useState({
+    show: true,
+    fading: false,
+    sticky: false,
+  });
 
   const scoreLayerFilter = useMemo(
     () => buildScoreCategoryFilter(mapFilters),
@@ -352,8 +370,12 @@ function App() {
   const dismissSplash = useCallback(() => {
     setSplash((s) => {
       if (!s.show || s.fading) return s;
-      return { show: true, fading: true };
+      return { ...s, fading: true };
     });
+  }, []);
+
+  const openSplash = useCallback(() => {
+    setSplash({ show: true, fading: false, sticky: true });
   }, []);
 
   useEffect(() => {
@@ -366,7 +388,7 @@ function App() {
   }, [splash.show, splash.fading, dismissSplash]);
 
   useEffect(() => {
-    if (!splash.show || splash.fading) return undefined;
+    if (!splash.show || splash.fading || splash.sticky) return undefined;
     const dataReady = !restaurantsLoading || Boolean(mapLoadError);
     const mapReady = mapStyleReady || Boolean(mapLoadError);
     const elapsed = performance.now() - splashStartedAt.current;
@@ -381,13 +403,14 @@ function App() {
     mapStyleReady,
     splash.show,
     splash.fading,
+    splash.sticky,
     dismissSplash,
   ]);
 
   useEffect(() => {
     if (!splash.fading) return;
     const id = window.setTimeout(() => {
-      setSplash({ show: false, fading: false });
+      setSplash({ show: false, fading: false, sticky: false });
     }, SPLASH_FADE_MS);
     return () => window.clearTimeout(id);
   }, [splash.fading]);
@@ -410,34 +433,77 @@ function App() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
+  const fetchRestaurants = useCallback(async ({ showLoading } = {}) => {
+    if (showLoading) setRestaurantsLoading(true);
+    try {
+      const res = await axios.get(MAP_POINTS_URL);
+      setRestaurants(restaurantsFromResponse(res.data));
+      setMapLoadError(null);
+    } catch (err) {
+      console.error('Failed to load restaurants:', err);
+      const networkHint =
+        err.code === 'ERR_NETWORK' || err.message === 'Network Error'
+          ? 'Could not reach the API. Start the Flask server (`python run.py` in backend/) and confirm VITE_API_BASE if you changed ports.'
+          : err.message || 'Failed to load restaurants';
+      setMapLoadError(networkHint);
+      throw err;
+    } finally {
+      if (showLoading) setRestaurantsLoading(false);
+    }
+  }, []);
+
+  const syncFromSource = useCallback(
+    async ({ initial } = {}) => {
+      try {
+        const { data: meta } = await axios.get(META_URL);
+        const fp = metaFingerprint(meta);
+        if (!fp) return;
+        if (initial) {
+          mapDataFingerprint.current = fp;
+          return;
+        }
+        if (fp === mapDataFingerprint.current) return;
+        const previous = mapDataFingerprint.current;
+        mapDataFingerprint.current = fp;
+        try {
+          await fetchRestaurants({ showLoading: false });
+          setStatsEpoch((n) => n + 1);
+        } catch {
+          mapDataFingerprint.current = previous;
+        }
+      } catch {
+        /* keep the last good map payload if meta is unreachable */
+      }
+    },
+    [fetchRestaurants]
+  );
+
   useEffect(() => {
     let cancelled = false;
-    setRestaurantsLoading(true);
-    axios
-      .get(MAP_POINTS_URL)
-      .then((res) => {
-        if (cancelled) return;
-        const data = Array.isArray(res.data)
-          ? res.data
-          : res.data.results || res.data.restaurants || res.data.data || [];
-        setRestaurants(data);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        console.error('Failed to load restaurants:', err);
-        const networkHint =
-          err.code === 'ERR_NETWORK' || err.message === 'Network Error'
-            ? 'Could not reach the API. Start the Flask server (`python run.py` in backend/) and confirm VITE_API_BASE if you changed ports.'
-            : err.message || 'Failed to load restaurants';
-        setMapLoadError(networkHint);
-      })
-      .finally(() => {
-        if (!cancelled) setRestaurantsLoading(false);
-      });
+    (async () => {
+      try {
+        await fetchRestaurants({ showLoading: true });
+        if (!cancelled) await syncFromSource({ initial: true });
+      } catch {
+        /* fetchRestaurants already recorded mapLoadError */
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchRestaurants, syncFromSource]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'visible') syncFromSource();
+    };
+    const id = window.setInterval(() => syncFromSource(), MAP_POLL_MS);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [syncFromSource]);
 
   useEffect(() => {
     if (!debouncedSearch) {
@@ -526,7 +592,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [sidebarOpen]);
+  }, [sidebarOpen, statsEpoch]);
 
   useEffect(() => {
     if (!sidebarOpen) {
@@ -566,7 +632,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [sidebarOpen, selectedPostal]);
+  }, [sidebarOpen, selectedPostal, statsEpoch]);
 
   const searchZipHighlight = useMemo(() => {
     return isSfZipSearchQuery(searchQuery) ? searchQuery.trim() : '';
@@ -1600,13 +1666,18 @@ function App() {
       </aside>
 
       <div className="search-panel">
-        <div className="app-brand">
+        <button
+          type="button"
+          className="app-brand"
+          onClick={openSplash}
+          aria-label="Back to home screen"
+        >
           <span className="app-brand-mark" aria-hidden />
-          <div>
-            <p className="app-brand-title">SF Restaurant Safety</p>
-            <p className="app-brand-sub">Health inspection scores</p>
-          </div>
-        </div>
+          <span>
+            <span className="app-brand-title">SF Restaurant Safety</span>
+            <span className="app-brand-sub">Health inspection scores</span>
+          </span>
+        </button>
         <input
           ref={searchInputRef}
           type="search"

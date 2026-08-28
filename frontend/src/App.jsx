@@ -325,6 +325,25 @@ function nativeMapsHref({ lat, lng, name, address }) {
 
 const PINNED_STORAGE_KEY = 'sf-restaurant-safety-pinned';
 const MAP_PREFS_STORAGE_KEY = 'sf-restaurant-safety-map-prefs';
+const SPLASH_SEEN_KEY = 'sf-restaurant-safety-splash-seen';
+
+function shouldShowSplashOnBoot() {
+  if (typeof window === 'undefined') return true;
+  if (readRestaurantQuery()) return false;
+  try {
+    return localStorage.getItem(SPLASH_SEEN_KEY) !== '1';
+  } catch {
+    return true;
+  }
+}
+
+function markSplashSeen() {
+  try {
+    localStorage.setItem(SPLASH_SEEN_KEY, '1');
+  } catch {
+    /* private mode / quota */
+  }
+}
 
 function loadPinnedRestaurants() {
   if (typeof localStorage === 'undefined') return [];
@@ -435,6 +454,75 @@ function tooltipScoreClassName(score) {
   return 'map-dot-tooltip-score map-dot-tooltip-score--bad';
 }
 
+/** Plain-language LIVES band next to the numeric score. */
+function scoreBandLabel(score) {
+  if (score == null || score === '') return 'No score';
+  const n = Number(score);
+  if (!Number.isFinite(n)) return 'No score';
+  if (n >= 96) return 'Excellent';
+  if (n >= 90) return 'Good';
+  if (n >= 70) return 'Adequate';
+  return 'Poor';
+}
+
+function restaurantScoreValue(r) {
+  const raw = r?.latest_inspection_score ?? r?.score ?? r?.inspection_score;
+  if (raw == null || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function restaurantMatchesFilters(r, filters) {
+  const n = restaurantScoreValue(r);
+  if (n == null) return Boolean(filters?.noScore);
+  if (n >= 90) return Boolean(filters?.good);
+  if (n >= 70) return Boolean(filters?.mid);
+  return Boolean(filters?.bad);
+}
+
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const R = 3958.8;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+function formatDistanceMiles(mi) {
+  if (!Number.isFinite(mi)) return '';
+  const feet = mi * 5280;
+  if (feet < 800) return `${Math.max(50, Math.round(feet / 50) * 50)} ft`;
+  if (mi < 10) return `${mi.toFixed(1)} mi`;
+  return `${Math.round(mi)} mi`;
+}
+
+function nearestRestaurants(rows, lat, lng, filters, limit = 5) {
+  const scored = [];
+  for (const r of rows) {
+    if (!restaurantMatchesFilters(r, filters)) continue;
+    const rLat = Number(r.business_latitude ?? r.latitude ?? r.lat);
+    const rLng = Number(r.business_longitude ?? r.longitude ?? r.lon ?? r.lng);
+    if (!Number.isFinite(rLat) || !Number.isFinite(rLng)) continue;
+    scored.push({ r, miles: haversineMiles(lat, lng, rLat, rLng) });
+  }
+  scored.sort((a, b) => a.miles - b.miles);
+  return scored.slice(0, limit);
+}
+
+function filtersAreAllOn(filters) {
+  return Boolean(filters?.good && filters?.mid && filters?.bad && filters?.noScore);
+}
+
+const LEGEND_FILTER_CHIPS = [
+  { key: 'good', label: '90+', color: '#22c55e' },
+  { key: 'mid', label: '70–89', color: '#eab308' },
+  { key: 'bad', label: '<70', color: '#ef4444' },
+  { key: 'noScore', label: 'No score', color: '#9ca3af' },
+];
+
 function formatDataThrough(iso) {
   if (iso == null || iso === '') return null;
   const ymd = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
@@ -506,6 +594,8 @@ function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [geoToast, setGeoToast] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
   const [mapLoadError, setMapLoadError] = useState(null);
   const [mapStyleReady, setMapStyleReady] = useState(false);
   const [searchNotice, setSearchNotice] = useState(null);
@@ -517,6 +607,7 @@ function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchActiveIndex, setSearchActiveIndex] = useState(-1);
 
   const [popup, setPopup] = useState(null);
   const [hoverTooltip, setHoverTooltip] = useState(null);
@@ -544,11 +635,11 @@ function App() {
   const splashStartedAt = useRef(
     typeof performance !== 'undefined' ? performance.now() : 0
   );
-  const [splash, setSplash] = useState({
-    show: true,
-    fading: false,
-    sticky: false,
-  });
+  const [splash, setSplash] = useState(() =>
+    shouldShowSplashOnBoot()
+      ? { show: true, fading: false, sticky: false }
+      : { show: false, fading: false, sticky: false }
+  );
 
   const scoreLayerFilter = useMemo(
     () => buildScoreCategoryFilter(mapFilters),
@@ -681,10 +772,21 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (splash.show || splash.fading) return;
+    markSplashSeen();
+  }, [splash.show, splash.fading]);
+
+  useEffect(() => {
     if (!geoToast) return;
     const t = window.setTimeout(() => setGeoToast(null), 4000);
     return () => window.clearTimeout(t);
   }, [geoToast]);
+
+  useEffect(() => {
+    if (!searchNotice) return;
+    const t = window.setTimeout(() => setSearchNotice(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [searchNotice]);
 
   const dismissSplash = useCallback(() => {
     setSplash((s) => {
@@ -872,6 +974,19 @@ function App() {
   }, [debouncedSearch, restaurants, restaurantsLoading, pinnedIdSet]);
 
   useEffect(() => {
+    setSearchActiveIndex(searchResults.length ? 0 : -1);
+  }, [searchResults]);
+
+  useEffect(() => {
+    if (!searchOpen || searchActiveIndex < 0) return;
+    const id = searchResults[searchActiveIndex]?.business_id;
+    if (id == null) return;
+    document
+      .getElementById(`search-option-${id}`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [searchActiveIndex, searchResults, searchOpen]);
+
+  useEffect(() => {
     const onKey = (e) => {
       if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const tag = e.target?.tagName;
@@ -884,18 +999,32 @@ function App() {
         return;
       }
       if (e.key === 'Escape') {
-        setSearchOpen(false);
-        setZipMenuOpen(false);
-        setPopup(null);
+        if (splash.show && !splash.fading) return;
+        if (searchOpen) {
+          setSearchOpen(false);
+          searchInputRef.current?.blur();
+          return;
+        }
+        if (popup) {
+          setPopup(null);
+          setHoverTooltip(null);
+          const map = mapRef.current?.getMap();
+          clearDotHover(map);
+          return;
+        }
+        if (sidebarOpen) {
+          setSidebarOpen(false);
+          setZipMenuOpen(false);
+          return;
+        }
         setHoverTooltip(null);
-        setSidebarOpen(false);
         const map = mapRef.current?.getMap();
         clearDotHover(map);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [clearDotHover]);
+  }, [clearDotHover, searchOpen, popup, sidebarOpen, splash.show, splash.fading]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -1055,6 +1184,17 @@ function App() {
         .filter(Boolean),
     };
   }, [restaurants]);
+
+  const nearbyPlaces = useMemo(() => {
+    if (!userLocation) return [];
+    return nearestRestaurants(
+      restaurants,
+      userLocation.lat,
+      userLocation.lng,
+      mapFilters,
+      5
+    );
+  }, [userLocation, restaurants, mapFilters]);
 
   const restaurantsCirclePaint = useMemo(() => {
     const radiusCore = uniformDotSize
@@ -1302,6 +1442,62 @@ function App() {
     await loadPopupFromInspectionsEndpoint(r.business_id, lon, lat, r);
   };
 
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      if (searchOpen || searchQuery) {
+        e.preventDefault();
+        e.stopPropagation();
+        setSearchOpen(false);
+        searchInputRef.current?.blur();
+      }
+      return;
+    }
+    const zipMode =
+      isSfZipSearchQuery(searchQuery.trim()) ||
+      isSfZipSearchQuery(debouncedSearch);
+    if (e.key === 'ArrowDown') {
+      if (zipMode) return;
+      e.preventDefault();
+      setSearchOpen(true);
+      setSearchActiveIndex((i) => {
+        if (!searchResults.length) return -1;
+        return i < 0 ? 0 : (i + 1) % searchResults.length;
+      });
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      if (zipMode || !searchOpen) return;
+      e.preventDefault();
+      setSearchActiveIndex((i) => {
+        if (!searchResults.length) return -1;
+        return i <= 0 ? searchResults.length - 1 : i - 1;
+      });
+      return;
+    }
+    if (e.key === 'Enter') {
+      if (zipMode) {
+        searchInputRef.current?.blur();
+        setSearchOpen(false);
+        return;
+      }
+      if (
+        searchOpen &&
+        searchActiveIndex >= 0 &&
+        searchResults[searchActiveIndex]
+      ) {
+        e.preventDefault();
+        handleSelectSearchResult(searchResults[searchActiveIndex]);
+      }
+    }
+  };
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery('');
+    setSearchOpen(false);
+    setSearchNotice(null);
+    searchInputRef.current?.focus();
+  }, []);
+
   const handleSelectRankedRestaurant = async (r) => {
     const lon = Number(r.business_longitude ?? r.lon ?? r.lng);
     const lat = Number(r.business_latitude ?? r.lat);
@@ -1420,6 +1616,13 @@ function App() {
       )
     : 1;
   const dataThrough = formatDataThrough(dataMeta?.latest_inspection_date);
+  const filtersAllOn = filtersAreAllOn(mapFilters);
+  const activeSearchOptionId =
+    showDropdown &&
+    searchActiveIndex >= 0 &&
+    searchResults[searchActiveIndex]?.business_id
+      ? `search-option-${searchResults[searchActiveIndex].business_id}`
+      : undefined;
 
   const toggleSidebar = () => setSidebarOpen((o) => !o);
 
@@ -1466,27 +1669,48 @@ function App() {
   }, []);
 
   const handleNearMe = useCallback(() => {
+    if (geoLoading) return;
+    if (userLocation) {
+      setNearbyOpen(true);
+      mapRef.current?.flyTo({
+        center: [userLocation.lng, userLocation.lat],
+        zoom: 15,
+        duration: 800,
+        essential: true,
+      });
+      return;
+    }
     if (!navigator.geolocation) {
       setGeoToast('Geolocation is not supported in this browser');
       return;
     }
+    setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { longitude, latitude } = pos.coords;
+        setGeoLoading(false);
         setUserLocation({ lng: longitude, lat: latitude });
+        setNearbyOpen(true);
         mapRef.current?.flyTo({
           center: [longitude, latitude],
-          zoom: 14,
+          zoom: 15,
           duration: 1200,
           essential: true,
         });
       },
-      () => {
-        setGeoToast('Location access denied');
+      (err) => {
+        setGeoLoading(false);
+        if (err?.code === 1) {
+          setGeoToast('Location access denied');
+        } else if (err?.code === 3) {
+          setGeoToast('Location timed out — try again');
+        } else {
+          setGeoToast('Could not find your location');
+        }
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
-  }, []);
+  }, [geoLoading, userLocation]);
 
   const mapStyleUrl = basemapDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
   const popupMapsHref = popup
@@ -1666,6 +1890,9 @@ function App() {
                               ? popup.score
                               : '—'}
                           </span>
+                          <span className="popup-score-band">
+                            {scoreBandLabel(popup.score)}
+                          </span>
                         </dd>
                       </div>
                       <div>
@@ -1757,7 +1984,7 @@ function App() {
             <div className={tooltipScoreClassName(hoverTooltip.score)}>
               {hoverTooltip.scoreLabel === 'No score'
                 ? 'No score'
-                : `Score ${hoverTooltip.scoreLabel}`}
+                : `Score ${hoverTooltip.scoreLabel} · ${scoreBandLabel(hoverTooltip.score)}`}
             </div>
           </div>
         )}
@@ -1819,9 +2046,15 @@ function App() {
           </button>
           <button
             type="button"
-            className="near-me-btn"
+            className={`near-me-btn${geoLoading ? ' is-loading' : ''}`}
             onClick={handleNearMe}
-            aria-label="Near me: center map on your location"
+            disabled={geoLoading}
+            aria-busy={geoLoading}
+            aria-label={
+              geoLoading
+                ? 'Finding your location'
+                : 'Near me: center map on your location'
+            }
             title="Near me"
           >
             <svg
@@ -1838,7 +2071,9 @@ function App() {
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
             </svg>
-            <span className="near-me-label">Near Me</span>
+            <span className="near-me-label">
+              {geoLoading ? 'Locating' : 'Near Me'}
+            </span>
           </button>
         </div>
       </div>
@@ -1885,11 +2120,12 @@ function App() {
 
       <button
         type="button"
-        className="sidebar-menu-btn"
+        className={`sidebar-menu-btn${filtersAllOn ? '' : ' has-filter-badge'}`}
         onClick={toggleSidebar}
         aria-expanded={sidebarOpen}
         aria-controls="map-sidebar-panel"
         aria-label={sidebarOpen ? 'Close insights panel' : 'Open insights panel'}
+        title={filtersAllOn ? 'Insights' : 'Insights (filters on)'}
       >
         {sidebarOpen ? (
           <span className="sidebar-menu-icon sidebar-menu-icon--close" aria-hidden>
@@ -2315,25 +2551,46 @@ function App() {
             <span className="app-brand-sub">Health inspection scores</span>
           </span>
         </button>
-        <input
-          ref={searchInputRef}
-          type="search"
-          className="search-input"
-          placeholder="Search restaurants or ZIP…"
-          value={searchQuery}
-          autoComplete="off"
-          aria-label="Search restaurants or ZIP code"
-          aria-expanded={showDropdown}
-          aria-controls="search-results-list"
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setSearchOpen(true);
-          }}
-          onFocus={() => setSearchOpen(true)}
-          onBlur={() => {
-            window.setTimeout(() => setSearchOpen(false), 180);
-          }}
-        />
+        <div className="search-input-wrap">
+          <input
+            ref={searchInputRef}
+            type="search"
+            className="search-input"
+            placeholder="Search restaurants or ZIP…"
+            value={searchQuery}
+            autoComplete="off"
+            role="combobox"
+            aria-label="Search restaurants or ZIP code"
+            aria-expanded={showDropdown}
+            aria-controls="search-results-list"
+            aria-activedescendant={activeSearchOptionId}
+            aria-autocomplete="list"
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchOpen(true);
+            }}
+            onKeyDown={handleSearchKeyDown}
+            onFocus={() => setSearchOpen(true)}
+            onBlur={() => {
+              window.setTimeout(() => setSearchOpen(false), 180);
+            }}
+          />
+          {searchQuery ? (
+            <button
+              type="button"
+              className="search-clear-btn"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={clearSearch}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          ) : (
+            <kbd className="search-kbd-hint" title="Press / to search">
+              /
+            </kbd>
+          )}
+        </div>
         {searchZipHighlight && (
           <div className="search-zip-badge" role="status">
             <span className="search-zip-badge-text">
@@ -2343,10 +2600,7 @@ function App() {
             <button
               type="button"
               className="search-zip-badge-clear"
-              onClick={() => {
-                setSearchQuery('');
-                setSearchOpen(false);
-              }}
+              onClick={clearSearch}
               aria-label="Clear ZIP search"
             >
               ×
@@ -2367,12 +2621,17 @@ function App() {
               <li className="search-dropdown-status">No matches</li>
             )}
             {!searchLoading &&
-              searchResults.map((r) => (
+              searchResults.map((r, index) => (
                 <li key={r.business_id}>
                   <button
                     type="button"
-                    className="search-result-btn"
+                    id={`search-option-${r.business_id}`}
+                    className={`search-result-btn${
+                      index === searchActiveIndex ? ' is-active' : ''
+                    }`}
                     role="option"
+                    aria-selected={index === searchActiveIndex}
+                    onMouseEnter={() => setSearchActiveIndex(index)}
                     onClick={() => handleSelectSearchResult(r)}
                   >
                     <span className="search-result-name">
@@ -2393,6 +2652,53 @@ function App() {
               ))}
           </ul>
         )}
+        {userLocation && nearbyOpen && !showDropdown && !searchZipHighlight && (
+          <div className="nearby-panel">
+            <div className="nearby-panel-header">
+              <h2 className="nearby-panel-title">Nearby</h2>
+              <button
+                type="button"
+                className="nearby-panel-close"
+                onClick={() => setNearbyOpen(false)}
+                aria-label="Hide nearby list"
+              >
+                ×
+              </button>
+            </div>
+            {nearbyPlaces.length === 0 ? (
+              <p className="nearby-panel-empty">
+                No restaurants match the current score filters near you.
+              </p>
+            ) : (
+              <ul className="nearby-panel-list">
+                {nearbyPlaces.map(({ r, miles }) => {
+                  const score = restaurantScoreValue(r);
+                  return (
+                    <li key={`near-${r.business_id}`}>
+                      <button
+                        type="button"
+                        className="nearby-panel-btn"
+                        onClick={() => handleSelectRankedRestaurant(r)}
+                      >
+                        <span className="nearby-panel-name">
+                          {r.business_name}
+                        </span>
+                        <span className="nearby-panel-meta">
+                          <span className="nearby-panel-dist">
+                            {formatDistanceMiles(miles)}
+                          </span>
+                          <span className={`nearby-panel-score ${scoreClassName(score)}`}>
+                            {score != null ? score : '—'}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="app-messages" aria-live="polite">
@@ -2403,7 +2709,16 @@ function App() {
         )}
         {mapLoadError && (
           <div className="app-error" role="alert">
-            {mapLoadError}
+            <p className="app-error-text">{mapLoadError}</p>
+            <button
+              type="button"
+              className="app-error-retry"
+              onClick={() => {
+                fetchRestaurants({ showLoading: true }).catch(() => {});
+              }}
+            >
+              Retry
+            </button>
           </div>
         )}
         {searchNotice && (
@@ -2446,7 +2761,41 @@ function App() {
               <span>90</span>
               <span>100</span>
             </div>
-            <LegendItem color="#9ca3af" label="No score" />
+          </>
+        )}
+        {mapLayerMode !== 'off' && (
+          <>
+            <div
+              className="legend-filter-row"
+              role="group"
+              aria-label="Filter by inspection score"
+            >
+              {LEGEND_FILTER_CHIPS.map(({ key, label, color }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`legend-chip${mapFilters[key] ? '' : ' is-off'}`}
+                  aria-pressed={mapFilters[key]}
+                  onClick={() => setFilter(key, !mapFilters[key])}
+                >
+                  <span
+                    className="legend-chip-swatch"
+                    style={{ background: color }}
+                    aria-hidden
+                  />
+                  {label}
+                </button>
+              ))}
+            </div>
+            {!filtersAllOn && (
+              <button
+                type="button"
+                className="legend-show-all"
+                onClick={() => setMapFilters({ ...defaultMapFilters })}
+              >
+                Show all scores
+              </button>
+            )}
           </>
         )}
       </div>
@@ -2463,27 +2812,19 @@ function App() {
             <h1 id="app-splash-title" className="app-splash-title">
               SF Restaurant Safety Map
             </h1>
+            <p className="app-splash-sub">
+              Tap a pin for the latest inspection score, or search by name or
+              ZIP.
+            </p>
             <div className="app-splash-dots" aria-hidden>
               <span className="app-splash-dot app-splash-dot--good" />
               <span className="app-splash-dot app-splash-dot--mid" />
               <span className="app-splash-dot app-splash-dot--bad" />
             </div>
+            <p className="app-splash-continue">Click anywhere to continue</p>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function LegendItem({ color, label }) {
-  return (
-    <div className="legend-item">
-      <span
-        className="legend-swatch"
-        style={{ background: color }}
-        aria-hidden
-      />
-      <span>{label}</span>
     </div>
   );
 }

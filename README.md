@@ -30,7 +30,7 @@ Click any pin to open inspection details: address, latest score, inspection date
 - Pin restaurants from a popup; they get a star on the map and a saved list in Insights, with one-tap directions.
 - Landmark pins (Golden Gate Bridge, Ferry Building, Oracle Park, and others) appear as you zoom in.
 - "Near Me" button uses the browser's geolocation API to recenter the map. **SF** resets to the city view.
-- Light/dark Mapbox basemap toggle. Click the brand chip to reopen the intro splash.
+- Light/dark Mapbox basemap toggle (remembered with overlay, filters, and pin-stack settings). Click the brand chip to reopen the intro splash.
 - Insights side panel with citywide totals, an avg-score readout, a score-distribution mini chart, the citywide lowest-scoring list, and a per-ZIP drilldown. Click a highest/lowest restaurant to fly the map and open its inspection popup.
 - Score-band map filters (show/hide 90+, 70–89, below 70, no-score dots).
 - Pins / Heatmap / Off overlay toggle. Heatmap weights lower scores more heavily so clusters of weaker inspections stand out.

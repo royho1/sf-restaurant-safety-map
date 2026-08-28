@@ -274,6 +274,7 @@ function nativeMapsHref({ lat, lng, name, address }) {
 }
 
 const PINNED_STORAGE_KEY = 'sf-restaurant-safety-pinned';
+const MAP_PREFS_STORAGE_KEY = 'sf-restaurant-safety-map-prefs';
 
 function loadPinnedRestaurants() {
   if (typeof localStorage === 'undefined') return [];
@@ -283,6 +284,46 @@ function loadPinnedRestaurants() {
     return parsed.filter((row) => row && row.business_id);
   } catch {
     return [];
+  }
+}
+
+function clampStackTarget(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 50;
+  return Math.min(100, Math.max(50, n));
+}
+
+function loadMapPrefs() {
+  const defaults = {
+    basemapDark: false,
+    mapLayerMode: 'pins',
+    mapFilters: { ...defaultMapFilters },
+    dotStackTarget: 50,
+    uniformDotSize: false,
+  };
+  if (typeof localStorage === 'undefined') return defaults;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(MAP_PREFS_STORAGE_KEY) || 'null');
+    if (!parsed || typeof parsed !== 'object') return defaults;
+    const mode = parsed.mapLayerMode;
+    const filters = parsed.mapFilters && typeof parsed.mapFilters === 'object'
+      ? {
+          good: parsed.mapFilters.good !== false,
+          mid: parsed.mapFilters.mid !== false,
+          bad: parsed.mapFilters.bad !== false,
+          noScore: parsed.mapFilters.noScore !== false,
+        }
+      : { ...defaultMapFilters };
+    return {
+      basemapDark: parsed.basemapDark === true,
+      mapLayerMode:
+        mode === 'heatmap' || mode === 'off' || mode === 'pins' ? mode : 'pins',
+      mapFilters: filters,
+      dotStackTarget: clampStackTarget(parsed.dotStackTarget),
+      uniformDotSize: parsed.uniformDotSize === true,
+    };
+  } catch {
+    return defaults;
   }
 }
 
@@ -417,7 +458,8 @@ function App() {
   const [mapLoadError, setMapLoadError] = useState(null);
   const [mapStyleReady, setMapStyleReady] = useState(false);
   const [searchNotice, setSearchNotice] = useState(null);
-  const [basemapDark, setBasemapDark] = useState(false);
+  const [savedMapPrefs] = useState(loadMapPrefs);
+  const [basemapDark, setBasemapDark] = useState(savedMapPrefs.basemapDark);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -438,10 +480,10 @@ function App() {
   const [neighborhoodDetail, setNeighborhoodDetail] = useState(null);
   const [neighborhoodLoading, setNeighborhoodLoading] = useState(false);
   const [neighborhoodError, setNeighborhoodError] = useState(null);
-  const [mapFilters, setMapFilters] = useState(() => ({ ...defaultMapFilters }));
-  const [mapLayerMode, setMapLayerMode] = useState('pins');
-  const [dotStackTarget, setDotStackTarget] = useState(50);
-  const [uniformDotSize, setUniformDotSize] = useState(false);
+  const [mapFilters, setMapFilters] = useState(savedMapPrefs.mapFilters);
+  const [mapLayerMode, setMapLayerMode] = useState(savedMapPrefs.mapLayerMode);
+  const [dotStackTarget, setDotStackTarget] = useState(savedMapPrefs.dotStackTarget);
+  const [uniformDotSize, setUniformDotSize] = useState(savedMapPrefs.uniformDotSize);
   const [pinnedRestaurants, setPinnedRestaurants] = useState(loadPinnedRestaurants);
   const [mapZoom, setMapZoom] = useState(SF_CENTER.zoom);
   const [statsEpoch, setStatsEpoch] = useState(0);
@@ -532,6 +574,23 @@ function App() {
       /* private mode / quota */
     }
   }, [pinnedRestaurants]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        MAP_PREFS_STORAGE_KEY,
+        JSON.stringify({
+          basemapDark,
+          mapLayerMode,
+          mapFilters,
+          dotStackTarget,
+          uniformDotSize,
+        })
+      );
+    } catch {
+      /* private mode / quota */
+    }
+  }, [basemapDark, mapLayerMode, mapFilters, dotStackTarget, uniformDotSize]);
 
   const pinnedIdSet = useMemo(
     () => new Set(pinnedRestaurants.map((row) => String(row.business_id))),

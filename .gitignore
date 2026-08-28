@@ -17,6 +17,7 @@ frontend/node_modules/
 frontend/build/
 frontend/dist/
 frontend/.env
+.vite/
 
 # OS
 .DS_Store

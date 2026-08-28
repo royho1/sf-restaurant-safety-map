@@ -26,7 +26,7 @@ Click any pin to open inspection details: address, latest score, inspection date
 - One-click circle markers colored on a **score gradient** (red → yellow → green → dark green at 100), not a single 90+ blob. Weaker scores render larger by default so they stay visible in a 90+ majority.
 - Choose which scores sit on top (reds / yellows / greens) and optionally make every dot the same size.
 - Restaurant search with instant typeahead over the loaded map. Typing a 5-digit `941xx` ZIP switches into ZIP mode and flies the map to that ZIP's centroid.
-- Click any dot for an inspection-detail popup: name, address, latest **scored** inspection, date, violations with risk tags, pin/save, and **Directions** in Apple Maps or Google Maps.
+- Click any dot for an inspection-detail popup: name, address, latest **scored** inspection, date, violations with risk tags, pin/save, **Directions** in Apple Maps or Google Maps, and **Copy link** to share that restaurant (`?r=`).
 - Pin restaurants from a popup; they get a star on the map and a saved list in Insights, with one-tap directions.
 - Landmark pins (Golden Gate Bridge, Ferry Building, Oracle Park, and others) appear as you zoom in.
 - "Near Me" button uses the browser's geolocation API to recenter the map. **SF** resets to the city view.

@@ -13,6 +13,56 @@ const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '');
 const MAP_POINTS_URL = `${API_BASE}/api/restaurants?has_coordinates=true&limit=10000&view=map`;
 const META_URL = `${API_BASE}/api/meta`;
 const MAP_POLL_MS = 10 * 60 * 1000;
+const RESTAURANT_QUERY_PARAM = 'r';
+
+function readRestaurantQuery() {
+  if (typeof window === 'undefined') return '';
+  return (new URLSearchParams(window.location.search).get(RESTAURANT_QUERY_PARAM) || '').trim();
+}
+
+function replaceRestaurantQuery(businessId) {
+  if (typeof window === 'undefined' || !window.history?.replaceState) return;
+  const url = new URL(window.location.href);
+  if (businessId) url.searchParams.set(RESTAURANT_QUERY_PARAM, String(businessId));
+  else url.searchParams.delete(RESTAURANT_QUERY_PARAM);
+  const next = `${url.pathname}${url.search}${url.hash}`;
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (next !== current) window.history.replaceState({}, '', next);
+}
+
+function restaurantShareHref(businessId) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(RESTAURANT_QUERY_PARAM, String(businessId));
+  url.hash = '';
+  return url.toString();
+}
+
+function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text).then(
+      () => true,
+      () => copyTextFallback(text)
+    );
+  }
+  return Promise.resolve(copyTextFallback(text));
+}
+
+function copyTextFallback(text) {
+  try {
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'fixed';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    const ok = document.execCommand('copy');
+    el.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -450,6 +500,7 @@ function App() {
   const searchInputRef = useRef(null);
   const hoveredBusinessIdRef = useRef(null);
   const hoverTooltipElRef = useRef(null);
+  const pendingShareIdRef = useRef(readRestaurantQuery());
   const [restaurants, setRestaurants] = useState([]);
   const [restaurantsLoading, setRestaurantsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -469,6 +520,7 @@ function App() {
 
   const [popup, setPopup] = useState(null);
   const [hoverTooltip, setHoverTooltip] = useState(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [citywideStats, setCitywideStats] = useState(null);
@@ -681,6 +733,31 @@ function App() {
     }, SPLASH_FADE_MS);
     return () => window.clearTimeout(id);
   }, [splash.fading]);
+
+  useEffect(() => {
+    if (!pendingShareIdRef.current) return undefined;
+    dismissSplash();
+  }, [dismissSplash]);
+
+  useEffect(() => {
+    const id = popup?.businessId ? String(popup.businessId) : '';
+    if (id) {
+      replaceRestaurantQuery(id);
+      return;
+    }
+    if (pendingShareIdRef.current) return;
+    replaceRestaurantQuery(null);
+  }, [popup?.businessId]);
+
+  useEffect(() => {
+    setLinkCopied(false);
+  }, [popup?.businessId]);
+
+  useEffect(() => {
+    if (!linkCopied) return undefined;
+    const t = window.setTimeout(() => setLinkCopied(false), 2000);
+    return () => window.clearTimeout(t);
+  }, [linkCopied]);
 
   const clearDotHover = useCallback((map) => {
     const prev = hoveredBusinessIdRef.current;
@@ -1243,6 +1320,80 @@ function App() {
     await loadPopupFromInspectionsEndpoint(r.business_id, lon, lat, r);
   };
 
+  useEffect(() => {
+    const id = pendingShareIdRef.current;
+    if (!id || restaurantsLoading || !mapStyleReady) return;
+
+    let cancelled = false;
+
+    const openAt = (row, lon, lat, businessId) => {
+      if (cancelled) return;
+      pendingShareIdRef.current = '';
+      mapRef.current?.flyTo({
+        center: [lon, lat],
+        zoom: 16,
+        duration: 1600,
+        essential: true,
+      });
+      loadPopupFromInspectionsEndpoint(businessId, lon, lat, row);
+    };
+
+    dismissSplash();
+
+    const row = restaurants.find((r) => String(r.business_id) === String(id));
+    if (row) {
+      const lon = Number(row.business_longitude ?? row.lon ?? row.lng);
+      const lat = Number(row.business_latitude ?? row.lat);
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) {
+        pendingShareIdRef.current = '';
+        setSearchNotice('This listing has no coordinates on the map.');
+        replaceRestaurantQuery(null);
+        return;
+      }
+      openAt(row, lon, lat, row.business_id);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    axios
+      .get(`${API_BASE}/api/restaurants/${encodeURIComponent(id)}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const lon = Number(data.business_longitude);
+        const lat = Number(data.business_latitude);
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) {
+          pendingShareIdRef.current = '';
+          setSearchNotice('This listing has no coordinates on the map.');
+          replaceRestaurantQuery(null);
+          return;
+        }
+        openAt(data, lon, lat, id);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        pendingShareIdRef.current = '';
+        setSearchNotice('That restaurant was not found.');
+        replaceRestaurantQuery(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurants, restaurantsLoading, mapStyleReady, dismissSplash]);
+
+  const copyRestaurantLink = useCallback(async () => {
+    const id = popup?.businessId;
+    if (!id) return;
+    const ok = await copyTextToClipboard(restaurantShareHref(id));
+    if (ok) {
+      setLinkCopied(true);
+      setSearchNotice(null);
+    } else {
+      setSearchNotice('Could not copy link');
+    }
+  }, [popup?.businessId]);
+
   if (!MAPBOX_TOKEN) {
     return (
       <div style={{ padding: 16 }}>
@@ -1495,6 +1646,15 @@ function App() {
                         >
                           Directions
                         </a>
+                      )}
+                      {popup.businessId && (
+                        <button
+                          type="button"
+                          className={`popup-action-btn${linkCopied ? ' is-copied' : ''}`}
+                          onClick={copyRestaurantLink}
+                        >
+                          {linkCopied ? 'Copied' : 'Copy link'}
+                        </button>
                       )}
                     </div>
                     <dl className="popup-meta">

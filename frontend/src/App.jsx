@@ -1280,6 +1280,7 @@ function App() {
     const lng = Number(popup.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
     const currentScore = restaurantScoreValue(popup);
+    if (currentScore == null) return [];
     return nearestRestaurants(restaurants, lat, lng, null, {
       limit: SAFER_NEARBY_LIMIT,
       maxMiles: SAFER_NEARBY_MILES,

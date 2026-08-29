@@ -2840,7 +2840,7 @@ function App() {
               <div
                 className="nearby-chip-row"
                 role="radiogroup"
-                aria-label="Walking radius"
+                aria-label="Straight-line radius"
               >
                 {NEARBY_RADIUS_OPTIONS.map((miles) => (
                   <button

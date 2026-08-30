@@ -1,6 +1,6 @@
 # SF Restaurant Safety Map
 
-Interactive web app that maps every San Francisco restaurant inspection score on a Mapbox-rendered map. Click a dot to see the latest score, the inspection date, and the violations recorded that day. Search by name or ZIP, filter by score band, jump to your current location, and open an Insights panel for citywide stats and a per-ZIP breakdown of best/worst restaurants.
+Interactive web app that maps every San Francisco restaurant inspection score on a Mapbox-rendered map. Click a dot to see the latest score, the inspection date, and the violations recorded that day. Search by name or ZIP, filter by score band, jump to your current location, and open an Insights panel for citywide stats and a per-ZIP breakdown of best/worst restaurants. No account required.
 
 Data comes from the city's public health-inspection feed: [DataSF — Restaurant Scores (LIVES Standard)](https://data.sfgov.org/Health-and-Social-Services/Restaurant-Scores-LIVES-Standard/pyih-qa8i).
 

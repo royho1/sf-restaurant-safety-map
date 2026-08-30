@@ -499,17 +499,85 @@ function formatDistanceMiles(mi) {
   return `${Math.round(mi)} mi`;
 }
 
-function nearestRestaurants(rows, lat, lng, filters, limit = 5) {
+const NEARBY_RADIUS_OPTIONS = [0.25, 0.5, 1];
+const NEARBY_DEFAULT_RADIUS_MILES = 0.5;
+const NEARBY_LIST_LIMIT = 8;
+const SAFER_NEARBY_MILES = 0.4;
+const SAFER_NEARBY_LIMIT = 3;
+
+function formatRadiusChip(miles) {
+  if (miles === 0.25) return '¼ mi';
+  if (miles === 0.5) return '½ mi';
+  if (miles === 1) return '1 mi';
+  return `${miles} mi`;
+}
+
+function readMapCenter(mapRef) {
+  const map = mapRef?.current;
+  if (!map) return null;
+  const center =
+    typeof map.getCenter === 'function'
+      ? map.getCenter()
+      : map.getMap?.()?.getCenter?.();
+  if (!center) return null;
+  const lng = Number(center.lng ?? center.lon);
+  const lat = Number(center.lat);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+function nearestRestaurants(rows, lat, lng, filters, options = {}) {
+  const {
+    limit = 5,
+    maxMiles = null,
+    sort = 'distance',
+    excludeId = null,
+    minScoreExclusive = null,
+    requireScore = false,
+  } = options;
+  const exclude = excludeId == null ? null : String(excludeId);
   const scored = [];
   for (const r of rows) {
-    if (!restaurantMatchesFilters(r, filters)) continue;
+    if (exclude && String(r.business_id) === exclude) continue;
+    if (filters && !restaurantMatchesFilters(r, filters)) continue;
+    const score = restaurantScoreValue(r);
+    if (requireScore && score == null) continue;
+    if (
+      minScoreExclusive != null &&
+      (score == null || score <= minScoreExclusive)
+    ) {
+      continue;
+    }
     const rLat = Number(r.business_latitude ?? r.latitude ?? r.lat);
     const rLng = Number(r.business_longitude ?? r.longitude ?? r.lon ?? r.lng);
     if (!Number.isFinite(rLat) || !Number.isFinite(rLng)) continue;
-    scored.push({ r, miles: haversineMiles(lat, lng, rLat, rLng) });
+    const miles = haversineMiles(lat, lng, rLat, rLng);
+    if (maxMiles != null && miles > maxMiles) continue;
+    scored.push({ r, miles, score });
   }
-  scored.sort((a, b) => a.miles - b.miles);
-  return scored.slice(0, limit);
+  if (sort === 'score') {
+    scored.sort((a, b) => {
+      if (a.score == null && b.score == null) return a.miles - b.miles;
+      if (a.score == null) return 1;
+      if (b.score == null) return -1;
+      return b.score - a.score || a.miles - b.miles;
+    });
+  } else {
+    scored.sort(
+      (a, b) => a.miles - b.miles || (b.score ?? -1) - (a.score ?? -1)
+    );
+  }
+  return {
+    results: scored.slice(0, limit),
+    total: scored.length,
+  };
+}
+
+function formatNearbyCountLabel(shown, total, miles) {
+  const radius = formatRadiusChip(miles);
+  if (total === 0) return `None within ${radius}`;
+  if (total > shown) return `${shown} of ${total} within ${radius}`;
+  return `${total} within ${radius}`;
 }
 
 function filtersAreAllOn(filters) {
@@ -596,6 +664,11 @@ function App() {
   const [geoToast, setGeoToast] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [nearbyOpen, setNearbyOpen] = useState(false);
+  const [nearbyAnchor, setNearbyAnchor] = useState(null);
+  const [nearbyRadiusMiles, setNearbyRadiusMiles] = useState(
+    NEARBY_DEFAULT_RADIUS_MILES
+  );
+  const [nearbySort, setNearbySort] = useState('distance');
   const [mapLoadError, setMapLoadError] = useState(null);
   const [mapStyleReady, setMapStyleReady] = useState(false);
   const [searchNotice, setSearchNotice] = useState(null);
@@ -1185,16 +1258,38 @@ function App() {
     };
   }, [restaurants]);
 
-  const nearbyPlaces = useMemo(() => {
-    if (!userLocation) return [];
+  const nearbyMatch = useMemo(() => {
+    if (!nearbyAnchor) return { results: [], total: 0 };
     return nearestRestaurants(
       restaurants,
-      userLocation.lat,
-      userLocation.lng,
+      nearbyAnchor.lat,
+      nearbyAnchor.lng,
       mapFilters,
-      5
+      {
+        limit: NEARBY_LIST_LIMIT,
+        maxMiles: nearbyRadiusMiles,
+        sort: nearbySort,
+      }
     );
-  }, [userLocation, restaurants, mapFilters]);
+  }, [nearbyAnchor, restaurants, mapFilters, nearbyRadiusMiles, nearbySort]);
+  const nearbyPlaces = nearbyMatch.results;
+
+  const saferNearby = useMemo(() => {
+    if (!popup) return [];
+    const lat = Number(popup.lat);
+    const lng = Number(popup.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+    const currentScore = restaurantScoreValue(popup);
+    if (currentScore == null) return [];
+    return nearestRestaurants(restaurants, lat, lng, null, {
+      limit: SAFER_NEARBY_LIMIT,
+      maxMiles: SAFER_NEARBY_MILES,
+      sort: 'score',
+      excludeId: popup.businessId,
+      requireScore: true,
+      minScoreExclusive: currentScore,
+    }).results;
+  }, [popup, restaurants]);
 
   const restaurantsCirclePaint = useMemo(() => {
     const radiusCore = uniformDotSize
@@ -1668,9 +1763,26 @@ function App() {
     });
   }, []);
 
+  const openNearbyFromMap = useCallback(() => {
+    const center = readMapCenter(mapRef);
+    if (!center) return false;
+    setNearbyAnchor({ ...center, source: 'map' });
+    setNearbyOpen(true);
+    return true;
+  }, []);
+
+  const handleNearbyThisView = useCallback(() => {
+    if (openNearbyFromMap()) setGeoToast(null);
+  }, [openNearbyFromMap]);
+
   const handleNearMe = useCallback(() => {
     if (geoLoading) return;
     if (userLocation) {
+      setNearbyAnchor({
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        source: 'gps',
+      });
       setNearbyOpen(true);
       mapRef.current?.flyTo({
         center: [userLocation.lng, userLocation.lat],
@@ -1681,7 +1793,8 @@ function App() {
       return;
     }
     if (!navigator.geolocation) {
-      setGeoToast('Geolocation is not supported in this browser');
+      openNearbyFromMap();
+      setGeoToast('Geolocation is not supported — showing this map view');
       return;
     }
     setGeoLoading(true);
@@ -1690,6 +1803,7 @@ function App() {
         const { longitude, latitude } = pos.coords;
         setGeoLoading(false);
         setUserLocation({ lng: longitude, lat: latitude });
+        setNearbyAnchor({ lat: latitude, lng: longitude, source: 'gps' });
         setNearbyOpen(true);
         mapRef.current?.flyTo({
           center: [longitude, latitude],
@@ -1700,17 +1814,30 @@ function App() {
       },
       (err) => {
         setGeoLoading(false);
+        const opened = openNearbyFromMap();
         if (err?.code === 1) {
-          setGeoToast('Location access denied');
+          setGeoToast(
+            opened
+              ? 'Location denied — showing restaurants in this map view'
+              : 'Location access denied'
+          );
         } else if (err?.code === 3) {
-          setGeoToast('Location timed out — try again');
+          setGeoToast(
+            opened
+              ? 'Location timed out — showing this map view'
+              : 'Location timed out — try again'
+          );
         } else {
-          setGeoToast('Could not find your location');
+          setGeoToast(
+            opened
+              ? 'Could not find your location — showing this map view'
+              : 'Could not find your location'
+          );
         }
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
-  }, [geoLoading, userLocation]);
+  }, [geoLoading, userLocation, openNearbyFromMap]);
 
   const mapStyleUrl = basemapDark ? MAP_STYLE_DARK : MAP_STYLE_LIGHT;
   const popupMapsHref = popup
@@ -1908,6 +2035,39 @@ function App() {
                         Last visit {formatInspectionDate(popup.lastVisit)} (no
                         score)
                       </p>
+                    )}
+                    {saferNearby.length > 0 && (
+                      <div className="popup-safer">
+                        <h3>Safer nearby</h3>
+                        <p className="popup-safer-hint">
+                          Higher scores within {formatRadiusChip(SAFER_NEARBY_MILES)}
+                        </p>
+                        <ul className="popup-safer-list">
+                          {saferNearby.map(({ r, miles, score }) => (
+                            <li key={`safer-${r.business_id}`}>
+                              <button
+                                type="button"
+                                className="popup-safer-btn"
+                                onClick={() => handleSelectRankedRestaurant(r)}
+                              >
+                                <span className="popup-safer-name">
+                                  {r.business_name}
+                                </span>
+                                <span className="popup-safer-meta">
+                                  <span className="popup-safer-dist">
+                                    {formatDistanceMiles(miles)}
+                                  </span>
+                                  <span
+                                    className={`popup-safer-score ${scoreClassName(score)}`}
+                                  >
+                                    {score != null ? score : '—'}
+                                  </span>
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                     {popup.fetchError && (
                       <p className="popup-note">
@@ -2652,10 +2812,21 @@ function App() {
               ))}
           </ul>
         )}
-        {userLocation && nearbyOpen && !showDropdown && !searchZipHighlight && (
+        {nearbyAnchor && nearbyOpen && !showDropdown && !searchZipHighlight && (
           <div className="nearby-panel">
             <div className="nearby-panel-header">
-              <h2 className="nearby-panel-title">Nearby</h2>
+              <div className="nearby-panel-heading">
+                <h2 className="nearby-panel-title">
+                  {nearbyAnchor.source === 'gps' ? 'Near you' : 'This view'}
+                </h2>
+                <p className="nearby-panel-count">
+                  {formatNearbyCountLabel(
+                    nearbyPlaces.length,
+                    nearbyMatch.total,
+                    nearbyRadiusMiles
+                  )}
+                </p>
+              </div>
               <button
                 type="button"
                 className="nearby-panel-close"
@@ -2665,22 +2836,80 @@ function App() {
                 ×
               </button>
             </div>
+            <div className="nearby-panel-tools">
+              <div
+                className="nearby-chip-row"
+                role="radiogroup"
+                aria-label="Straight-line radius"
+              >
+                {NEARBY_RADIUS_OPTIONS.map((miles) => (
+                  <button
+                    key={miles}
+                    type="button"
+                    role="radio"
+                    className="nearby-chip"
+                    aria-checked={nearbyRadiusMiles === miles}
+                    onClick={() => setNearbyRadiusMiles(miles)}
+                  >
+                    {formatRadiusChip(miles)}
+                  </button>
+                ))}
+              </div>
+              <div
+                className="nearby-chip-row"
+                role="radiogroup"
+                aria-label="Sort nearby restaurants"
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  className="nearby-chip"
+                  aria-checked={nearbySort === 'distance'}
+                  onClick={() => setNearbySort('distance')}
+                >
+                  Closest
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  className="nearby-chip"
+                  aria-checked={nearbySort === 'score'}
+                  onClick={() => setNearbySort('score')}
+                >
+                  Highest score
+                </button>
+              </div>
+              <div className="nearby-chip-row">
+                <button
+                  type="button"
+                  className={`nearby-chip${nearbyAnchor.source === 'map' ? ' is-on' : ''}`}
+                  onClick={handleNearbyThisView}
+                >
+                  Use map center
+                </button>
+              </div>
+            </div>
             {nearbyPlaces.length === 0 ? (
               <p className="nearby-panel-empty">
-                No restaurants match the current score filters near you.
+                No restaurants match the current score filters within{' '}
+                {formatRadiusChip(nearbyRadiusMiles)}. Widen the radius or turn
+                score bands back on.
               </p>
             ) : (
               <ul className="nearby-panel-list">
-                {nearbyPlaces.map(({ r, miles }) => {
-                  const score = restaurantScoreValue(r);
+                {nearbyPlaces.map(({ r, miles, score }) => {
+                  const selected =
+                    popup?.businessId != null &&
+                    String(popup.businessId) === String(r.business_id);
                   return (
                     <li key={`near-${r.business_id}`}>
                       <button
                         type="button"
-                        className="nearby-panel-btn"
+                        className={`nearby-panel-btn${selected ? ' is-selected' : ''}`}
                         onClick={() => handleSelectRankedRestaurant(r)}
                       >
                         <span className="nearby-panel-name">
+                          {isPinned(r.business_id) ? '★ ' : ''}
                           {r.business_name}
                         </span>
                         <span className="nearby-panel-meta">

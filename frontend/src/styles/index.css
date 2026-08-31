@@ -1646,17 +1646,14 @@ body,
   );
 }
 
-.legend-score-bar {
+.legend-rating-bar {
   height: 8px;
   border-radius: 999px;
   background: linear-gradient(
     90deg,
     #ef4444 0%,
-    #f97316 28%,
-    #eab308 48%,
-    #84cc16 68%,
-    #22c55e 84%,
-    #166534 100%
+    #eab308 50%,
+    #22c55e 100%
   );
 }
 

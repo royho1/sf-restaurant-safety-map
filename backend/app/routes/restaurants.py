@@ -20,10 +20,10 @@ MAP_LIST_COLUMNS = """
             r.business_id,
             r.business_name,
             r.business_address,
-            r.business_postal_code,
+            r.analysis_neighborhood,
             r.business_latitude,
             r.business_longitude,
-            latest.inspection_score AS latest_inspection_score
+            latest.facility_rating_status AS latest_rating_status
 """
 
 FULL_LIST_COLUMNS = """
@@ -36,7 +36,9 @@ FULL_LIST_COLUMNS = """
             r.business_phone_number,
             r.business_latitude,
             r.business_longitude,
-            latest.inspection_score AS latest_inspection_score,
+            r.analysis_neighborhood,
+            r.permit_type,
+            latest.facility_rating_status AS latest_rating_status,
             latest.inspection_date  AS latest_inspection_date
 """
 
@@ -63,7 +65,8 @@ def list_restaurants():
     name = request.args.get("name", type=str)
     name_term = (search or name or "").strip() or None
     postal_code = request.args.get("postal_code", type=str)
-    min_score = _parse_int(request.args.get("min_score"))
+    neighborhood = (request.args.get("neighborhood") or "").strip() or None
+    rating = (request.args.get("rating") or "").strip() or None
     has_coordinates = _parse_bool(request.args.get("has_coordinates"))
     view = (request.args.get("view") or "").strip().lower()
     is_map_view = view == "map"
@@ -86,13 +89,16 @@ def list_restaurants():
     if postal_code:
         where.append("r.business_postal_code = ?")
         params.append(postal_code)
+    if neighborhood:
+        where.append("r.analysis_neighborhood = ?")
+        params.append(neighborhood)
     if has_coordinates is True:
         where.append("r.business_latitude IS NOT NULL AND r.business_longitude IS NOT NULL")
     elif has_coordinates is False:
         where.append("(r.business_latitude IS NULL OR r.business_longitude IS NULL)")
-    if min_score is not None:
-        where.append("latest.inspection_score >= ?")
-        params.append(min_score)
+    if rating:
+        where.append("latest.facility_rating_status = ?")
+        params.append(rating)
 
     where_sql = f"WHERE {' AND '.join(where)}" if where else ""
 
@@ -146,7 +152,9 @@ def get_restaurant_inspections(business_id: str):
             business_address,
             business_city,
             business_state,
-            business_postal_code
+            business_postal_code,
+            analysis_neighborhood,
+            permit_type
         FROM restaurants
         WHERE business_id = ?
         """,
@@ -158,7 +166,14 @@ def get_restaurant_inspections(business_id: str):
 
     inspections = db.execute(
         """
-        SELECT inspection_id, inspection_date, inspection_score, inspection_type
+        SELECT
+            inspection_id,
+            inspection_date,
+            inspection_type,
+            facility_rating_status,
+            violation_count,
+            inspection_notes,
+            suspension_notes
         FROM inspections
         WHERE business_id = ?
         ORDER BY inspection_date DESC, inspection_id DESC
@@ -171,14 +186,15 @@ def get_restaurant_inspections(business_id: str):
         {
             "inspection_id": row["inspection_id"],
             "inspection_date": row["inspection_date"],
-            "inspection_score": row["inspection_score"],
             "inspection_type": row["inspection_type"],
+            "facility_rating_status": row["facility_rating_status"],
+            "violation_count": row["violation_count"],
         }
         for row in inspections
     ]
     if not inspections:
         payload["latest_inspection"] = None
-        payload["scored_inspection"] = None
+        payload["rated_inspection"] = None
         return jsonify(payload)
 
     def inspection_with_violations(row):
@@ -197,12 +213,12 @@ def get_restaurant_inspections(business_id: str):
         item["violations"] = rows_to_dicts(violation_rows)
         return item
 
-    scored_row = next(
-        (row for row in inspections if row["inspection_score"] is not None),
+    rated_row = next(
+        (row for row in inspections if row["facility_rating_status"]),
         None,
     )
     payload["latest_inspection"] = inspection_with_violations(inspections[0])
-    payload["scored_inspection"] = inspection_with_violations(scored_row)
+    payload["rated_inspection"] = inspection_with_violations(rated_row)
     return jsonify(payload)
 
 
@@ -214,7 +230,7 @@ def get_restaurant(business_id: str):
         f"""
         SELECT
             r.*,
-            latest.inspection_score AS latest_inspection_score,
+            latest.facility_rating_status AS latest_rating_status,
             latest.inspection_date  AS latest_inspection_date
         FROM restaurants r
         {LATEST_SCORE_JOIN}
@@ -228,7 +244,8 @@ def get_restaurant(business_id: str):
 
     inspections = db.execute(
         """
-        SELECT inspection_id, inspection_date, inspection_score, inspection_type
+        SELECT inspection_id, inspection_date, inspection_type, facility_rating_status,
+               violation_count, inspection_notes, suspension_notes
         FROM inspections
         WHERE business_id = ?
         ORDER BY inspection_date DESC, inspection_id DESC

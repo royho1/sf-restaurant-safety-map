@@ -79,26 +79,17 @@ const RESTAURANTS_LAYER_ID = 'restaurants-layer';
 const RESTAURANTS_HEATMAP_LAYER_ID = 'restaurants-heatmap-layer';
 const RESTAURANTS_HIT_LAYER_ID = 'restaurants-hit-layer';
 
-/** Lower inspection score ⇒ higher heatmap weight. Stops must be ascending. */
+/** Closures and conditional passes weigh more so they stand out. */
 const heatmapWeightExpression = [
-  'case',
-  ['any', ['==', ['get', 'score'], null], ['!', ['has', 'score']]],
+  'match',
+  ['coalesce', ['get', 'rating'], ''],
+  'Closure',
+  1,
+  'Conditional Pass',
+  0.65,
+  'Pass',
+  0.18,
   0.08,
-  [
-    'interpolate',
-    ['linear'],
-    ['to-number', ['get', 'score'], 85],
-    0,
-    1,
-    50,
-    0.8,
-    70,
-    0.5,
-    90,
-    0.28,
-    100,
-    0.18,
-  ],
 ];
 
 const restaurantsHeatmapPaint = {
@@ -151,69 +142,62 @@ const restaurantsHeatmapPaint = {
   ],
 };
 
-/** Continuous color so 90 and 100 are not the same green blob. */
 const circleColorExpression = [
-  'case',
-  ['any', ['==', ['get', 'score'], null], ['!', ['has', 'score']]],
+  'match',
+  ['coalesce', ['get', 'rating'], ''],
+  'Pass',
+  '#22c55e',
+  'Conditional Pass',
+  '#eab308',
+  'Closure',
+  '#ef4444',
   '#9ca3af',
-  [
-    'interpolate',
-    ['linear'],
-    ['to-number', ['get', 'score']],
-    50,
-    '#ef4444',
-    70,
-    '#f97316',
-    80,
-    '#eab308',
-    90,
-    '#84cc16',
-    96,
-    '#22c55e',
-    100,
-    '#166534',
-  ],
 ];
 
-function circleSortKeyForTarget(targetScore) {
+function circleSortKeyForTarget(stackMode) {
+  const order =
+    stackMode === 'pass'
+      ? ['Pass', 'Conditional Pass', 'Closure']
+      : stackMode === 'conditional'
+        ? ['Conditional Pass', 'Closure', 'Pass']
+        : ['Closure', 'Conditional Pass', 'Pass'];
   return [
-    'case',
-    ['any', ['==', ['get', 'score'], null], ['!', ['has', 'score']]],
+    'match',
+    ['coalesce', ['get', 'rating'], ''],
+    order[0],
+    3,
+    order[1],
+    2,
+    order[2],
+    1,
     0,
-    [
-      '-',
-      110,
-      ['abs', ['-', ['to-number', ['get', 'score']], targetScore]],
-    ],
   ];
 }
 
-function circleRadiusByScore(base) {
+function circleRadiusByRating(base) {
   return [
-    'interpolate',
-    ['linear'],
-    ['coalesce', ['to-number', ['get', 'score']], 100],
-    50,
+    'match',
+    ['coalesce', ['get', 'rating'], ''],
+    'Closure',
     base + 3.25,
-    80,
+    'Conditional Pass',
     base + 1.25,
-    90,
+    'Pass',
+    Math.max(3.25, base - 0.5),
     base,
-    100,
-    Math.max(3.25, base - 0.75),
   ];
 }
 
-function stackBandLabel(target) {
-  if (target < 70) return 'Reds on top';
-  if (target < 90) return 'Yellows on top';
-  return 'Greens on top';
+function stackBandLabel(mode) {
+  if (mode === 'pass') return 'Passes on top';
+  if (mode === 'conditional') return 'Conditional on top';
+  return 'Closures on top';
 }
 
-function stackLegendHint(target) {
-  if (target < 70) return 'Weaker scores sit on top';
-  if (target < 90) return 'Mid-range scores sit on top';
-  return 'Higher scores sit on top';
+function stackLegendHint(mode) {
+  if (mode === 'pass') return 'Passes sit on top';
+  if (mode === 'conditional') return 'Conditional passes sit on top';
+  return 'Closures sit on top';
 }
 
 const DOT_RADIUS_DESKTOP = 5;
@@ -224,39 +208,38 @@ const SPLASH_FADE_MS = 1000;
 const SPLASH_MAX_MS = 8000;
 
 const defaultMapFilters = {
-  good: true,
-  mid: true,
-  bad: true,
-  noScore: true,
+  pass: true,
+  conditional: true,
+  closure: true,
+  noRating: true,
 };
 
-/** Mapbox filter: visible restaurants by latest score category. */
-function buildScoreCategoryFilter({ good, mid, bad, noScore }) {
+/** Mapbox filter: visible restaurants by latest rating. */
+function buildRatingCategoryFilter({ pass, conditional, closure, noRating }) {
   const parts = [];
-  if (good) parts.push(['>=', ['get', 'score'], 90]);
-  if (mid) {
-    parts.push(['all', ['>=', ['get', 'score'], 70], ['<', ['get', 'score'], 90]]);
-  }
-  if (bad) {
+  if (pass) parts.push(['==', ['get', 'rating'], 'Pass']);
+  if (conditional) parts.push(['==', ['get', 'rating'], 'Conditional Pass']);
+  if (closure) parts.push(['==', ['get', 'rating'], 'Closure']);
+  if (noRating) {
     parts.push([
-      'all',
-      ['<', ['get', 'score'], 70],
-      ['!', ['==', ['get', 'score'], null]],
+      'any',
+      ['==', ['get', 'rating'], null],
+      ['!', ['has', 'rating']],
+      ['==', ['get', 'rating'], ''],
     ]);
   }
-  if (noScore) parts.push(['==', ['get', 'score'], null]);
   if (parts.length === 0) return ['==', 1, 0];
   if (parts.length === 1) return parts[0];
   return ['any', ...parts];
 }
 
-function computeZipCentroid(rows, zip) {
+function computeNeighborhoodCentroid(rows, neighborhood) {
   let sumLat = 0;
   let sumLon = 0;
   let n = 0;
   for (const r of rows) {
-    const z = String(r.business_postal_code ?? '').trim();
-    if (z !== zip) continue;
+    const z = String(r.analysis_neighborhood ?? '').trim();
+    if (z !== neighborhood) continue;
     const lon = Number(
       r.longitude ?? r.business_longitude ?? r.lon ?? r.lng
     );
@@ -274,8 +257,8 @@ function computeZipCentroid(rows, zip) {
 function formatAddress(r) {
   const parts = [
     r.business_address,
+    r.analysis_neighborhood,
     [r.business_city, r.business_state].filter(Boolean).join(', ') || null,
-    r.business_postal_code,
   ].filter(Boolean);
   return parts.join(', ');
 }
@@ -356,10 +339,35 @@ function loadPinnedRestaurants() {
   }
 }
 
-function clampStackTarget(value) {
+function clampStackMode(value) {
+  if (value === 'pass' || value === 'conditional' || value === 'closure') {
+    return value;
+  }
   const n = Number(value);
-  if (!Number.isFinite(n)) return 50;
-  return Math.min(100, Math.max(50, n));
+  if (Number.isFinite(n)) {
+    if (n < 70) return 'closure';
+    if (n < 90) return 'conditional';
+    return 'pass';
+  }
+  return 'closure';
+}
+
+function normalizeMapFilters(parsed) {
+  if (!parsed || typeof parsed !== 'object') return { ...defaultMapFilters };
+  if ('pass' in parsed || 'closure' in parsed || 'conditional' in parsed) {
+    return {
+      pass: parsed.pass !== false,
+      conditional: parsed.conditional !== false,
+      closure: parsed.closure !== false,
+      noRating: parsed.noRating !== false,
+    };
+  }
+  return {
+    pass: parsed.good !== false,
+    conditional: parsed.mid !== false,
+    closure: parsed.bad !== false,
+    noRating: parsed.noScore !== false && parsed.noRating !== false,
+  };
 }
 
 function loadMapPrefs() {
@@ -367,7 +375,7 @@ function loadMapPrefs() {
     basemapDark: false,
     mapLayerMode: 'pins',
     mapFilters: { ...defaultMapFilters },
-    dotStackTarget: 50,
+    dotStackTarget: 'closure',
     uniformDotSize: false,
   };
   if (typeof localStorage === 'undefined') return defaults;
@@ -375,20 +383,12 @@ function loadMapPrefs() {
     const parsed = JSON.parse(localStorage.getItem(MAP_PREFS_STORAGE_KEY) || 'null');
     if (!parsed || typeof parsed !== 'object') return defaults;
     const mode = parsed.mapLayerMode;
-    const filters = parsed.mapFilters && typeof parsed.mapFilters === 'object'
-      ? {
-          good: parsed.mapFilters.good !== false,
-          mid: parsed.mapFilters.mid !== false,
-          bad: parsed.mapFilters.bad !== false,
-          noScore: parsed.mapFilters.noScore !== false,
-        }
-      : { ...defaultMapFilters };
     return {
       basemapDark: parsed.basemapDark === true,
       mapLayerMode:
         mode === 'heatmap' || mode === 'off' || mode === 'pins' ? mode : 'pins',
-      mapFilters: filters,
-      dotStackTarget: clampStackTarget(parsed.dotStackTarget),
+      mapFilters: normalizeMapFilters(parsed.mapFilters),
+      dotStackTarget: clampStackMode(parsed.dotStackTarget),
       uniformDotSize: parsed.uniformDotSize === true,
     };
   } catch {
@@ -409,8 +409,9 @@ function toPinnedRestaurant(source, extras = {}) {
     business_address: source.business_address || source.address || '',
     business_latitude: Number.isFinite(lat) ? lat : null,
     business_longitude: Number.isFinite(lng) ? lng : null,
-    latest_inspection_score:
-      source.latest_inspection_score ?? source.score ?? null,
+    analysis_neighborhood: source.analysis_neighborhood || '',
+    latest_rating_status:
+      source.latest_rating_status ?? source.rating ?? source.score ?? null,
     pinnedAt: Date.now(),
     ...extras,
   };
@@ -433,51 +434,46 @@ function riskCategoryClassName(label) {
   return 'violation-risk violation-risk--other';
 }
 
-/** Matches map coloring: 96+ dark green, 90–95 green, 70–89 yellow, below 70 red. */
-function scoreClassName(score) {
-  if (score == null || score === '') return 'popup-score popup-score--na';
-  const n = Number(score);
-  if (!Number.isFinite(n)) return 'popup-score popup-score--na';
-  if (n >= 96) return 'popup-score popup-score--excellent';
-  if (n >= 90) return 'popup-score popup-score--good';
-  if (n >= 70) return 'popup-score popup-score--mid';
-  return 'popup-score popup-score--bad';
+function ratingClassName(rating) {
+  const r = normalizeRating(rating);
+  if (r === 'Pass') return 'popup-score popup-score--good';
+  if (r === 'Conditional Pass') return 'popup-score popup-score--mid';
+  if (r === 'Closure') return 'popup-score popup-score--bad';
+  return 'popup-score popup-score--na';
 }
 
-function tooltipScoreClassName(score) {
-  if (score == null || score === '') return 'map-dot-tooltip-score map-dot-tooltip-score--na';
-  const n = Number(score);
-  if (!Number.isFinite(n)) return 'map-dot-tooltip-score map-dot-tooltip-score--na';
-  if (n >= 96) return 'map-dot-tooltip-score map-dot-tooltip-score--excellent';
-  if (n >= 90) return 'map-dot-tooltip-score map-dot-tooltip-score--good';
-  if (n >= 70) return 'map-dot-tooltip-score map-dot-tooltip-score--mid';
-  return 'map-dot-tooltip-score map-dot-tooltip-score--bad';
+function tooltipRatingClassName(rating) {
+  const r = normalizeRating(rating);
+  if (r === 'Pass') return 'map-dot-tooltip-score map-dot-tooltip-score--good';
+  if (r === 'Conditional Pass') return 'map-dot-tooltip-score map-dot-tooltip-score--mid';
+  if (r === 'Closure') return 'map-dot-tooltip-score map-dot-tooltip-score--bad';
+  return 'map-dot-tooltip-score map-dot-tooltip-score--na';
 }
 
-/** Plain-language LIVES band next to the numeric score. */
-function scoreBandLabel(score) {
-  if (score == null || score === '') return 'No score';
-  const n = Number(score);
-  if (!Number.isFinite(n)) return 'No score';
-  if (n >= 96) return 'Excellent';
-  if (n >= 90) return 'Good';
-  if (n >= 70) return 'Adequate';
-  return 'Poor';
-}
-
-function restaurantScoreValue(r) {
-  const raw = r?.latest_inspection_score ?? r?.score ?? r?.inspection_score;
+function normalizeRating(raw) {
   if (raw == null || raw === '') return null;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  const lower = s.toLowerCase();
+  if (lower === 'pass') return 'Pass';
+  if (lower === 'conditional pass' || lower === 'conditional') return 'Conditional Pass';
+  if (lower === 'closure' || lower === 'closed') return 'Closure';
+  return s;
+}
+
+function restaurantRatingValue(r) {
+  return normalizeRating(
+    r?.latest_rating_status ?? r?.rating ?? r?.facility_rating_status
+  );
 }
 
 function restaurantMatchesFilters(r, filters) {
-  const n = restaurantScoreValue(r);
-  if (n == null) return Boolean(filters?.noScore);
-  if (n >= 90) return Boolean(filters?.good);
-  if (n >= 70) return Boolean(filters?.mid);
-  return Boolean(filters?.bad);
+  const rating = restaurantRatingValue(r);
+  if (rating == null) return Boolean(filters?.noRating);
+  if (rating === 'Pass') return Boolean(filters?.pass);
+  if (rating === 'Conditional Pass') return Boolean(filters?.conditional);
+  if (rating === 'Closure') return Boolean(filters?.closure);
+  return Boolean(filters?.noRating);
 }
 
 function haversineMiles(lat1, lon1, lat2, lon2) {
@@ -513,14 +509,16 @@ function nearestRestaurants(rows, lat, lng, filters, limit = 5) {
 }
 
 function filtersAreAllOn(filters) {
-  return Boolean(filters?.good && filters?.mid && filters?.bad && filters?.noScore);
+  return Boolean(
+    filters?.pass && filters?.conditional && filters?.closure && filters?.noRating
+  );
 }
 
 const LEGEND_FILTER_CHIPS = [
-  { key: 'good', label: '90+', color: '#22c55e' },
-  { key: 'mid', label: '70–89', color: '#eab308' },
-  { key: 'bad', label: '<70', color: '#ef4444' },
-  { key: 'noScore', label: 'No score', color: '#9ca3af' },
+  { key: 'pass', label: 'Pass', color: '#22c55e' },
+  { key: 'conditional', label: 'Conditional', color: '#eab308' },
+  { key: 'closure', label: 'Closure', color: '#ef4444' },
+  { key: 'noRating', label: 'No rating', color: '#9ca3af' },
 ];
 
 function formatDataThrough(iso) {
@@ -531,25 +529,27 @@ function formatDataThrough(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 
-/** Valid San Francisco ZIPs from API data: exactly 5 digits, prefix 941. */
-function filterSfZipCodes(rawList) {
+function neighborhoodNamesFromList(rawList) {
   const seen = new Set();
   const out = [];
   for (const raw of rawList || []) {
     const s = String(raw ?? '').trim();
-    if (s.length !== 5 || !/^\d{5}$/.test(s) || !s.startsWith('941')) continue;
-    if (seen.has(s)) continue;
-    seen.add(s);
+    if (!s || seen.has(s.toLowerCase())) continue;
+    seen.add(s.toLowerCase());
     out.push(s);
   }
-  out.sort();
+  out.sort((a, b) => a.localeCompare(b));
   return out;
 }
 
-/** Search bar: 5-digit SF ZIP (941xx), same rule as neighborhood list. */
-function isSfZipSearchQuery(query) {
-  const s = String(query ?? '').trim();
-  return s.length === 5 && /^\d{5}$/.test(s) && s.startsWith('941');
+function matchNeighborhoodQuery(query, names) {
+  const q = String(query ?? '').trim().toLowerCase();
+  if (q.length < 3) return '';
+  const exact = names.filter((n) => n.toLowerCase() === q);
+  if (exact.length === 1) return exact[0];
+  const prefix = names.filter((n) => n.toLowerCase().startsWith(q));
+  if (prefix.length === 1) return prefix[0];
+  return '';
 }
 
 function restaurantsFromResponse(data) {
@@ -564,10 +564,12 @@ function searchLoadedRestaurants(rows, query, limit = 10, pinnedIds) {
   for (const r of rows) {
     const name = String(r.business_name || '').toLowerCase();
     const addr = String(r.business_address || '').toLowerCase();
+    const hood = String(r.analysis_neighborhood || '').toLowerCase();
     let rank;
     if (name.startsWith(q)) rank = 0;
     else if (name.includes(q)) rank = 1;
     else if (addr.includes(q)) rank = 2;
+    else if (hood.includes(q)) rank = 3;
     else continue;
     const pinned = pinnedIds?.has(String(r.business_id)) ? 0 : 1;
     scored.push({ r, rank, pinned, name });
@@ -616,10 +618,10 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [citywideStats, setCitywideStats] = useState(null);
   const [statsError, setStatsError] = useState(null);
-  const [postalCodes, setPostalCodes] = useState([]);
-  const [zipInput, setZipInput] = useState('');
-  const [zipMenuOpen, setZipMenuOpen] = useState(false);
-  const [selectedPostal, setSelectedPostal] = useState('');
+  const [neighborhoodNames, setNeighborhoodNames] = useState([]);
+  const [neighborhoodInput, setNeighborhoodInput] = useState('');
+  const [neighborhoodMenuOpen, setNeighborhoodMenuOpen] = useState(false);
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState('');
   const [neighborhoodDetail, setNeighborhoodDetail] = useState(null);
   const [neighborhoodLoading, setNeighborhoodLoading] = useState(false);
   const [neighborhoodError, setNeighborhoodError] = useState(null);
@@ -641,20 +643,24 @@ function App() {
       : { show: false, fading: false, sticky: false }
   );
 
-  const scoreLayerFilter = useMemo(
-    () => buildScoreCategoryFilter(mapFilters),
+  const ratingLayerFilter = useMemo(
+    () => buildRatingCategoryFilter(mapFilters),
     [mapFilters]
   );
 
-  const sfZipCodes = useMemo(
-    () => filterSfZipCodes(postalCodes),
-    [postalCodes]
-  );
+  const knownNeighborhoods = useMemo(() => {
+    const fromMap = neighborhoodNamesFromList(
+      restaurants.map((r) => r.analysis_neighborhood)
+    );
+    if (fromMap.length) return fromMap;
+    return neighborhoodNamesFromList(neighborhoodNames);
+  }, [restaurants, neighborhoodNames]);
 
-  const filteredSfZips = useMemo(() => {
-    if (!zipInput) return sfZipCodes;
-    return sfZipCodes.filter((z) => z.startsWith(zipInput));
-  }, [sfZipCodes, zipInput]);
+  const filteredNeighborhoods = useMemo(() => {
+    if (!neighborhoodInput) return knownNeighborhoods;
+    const q = neighborhoodInput.trim().toLowerCase();
+    return knownNeighborhoods.filter((n) => n.toLowerCase().includes(q));
+  }, [knownNeighborhoods, neighborhoodInput]);
 
   const dotRadiusBase = isMobile ? DOT_RADIUS_MOBILE : DOT_RADIUS_DESKTOP;
   const dotRadiusHover = dotRadiusBase * 1.5;
@@ -958,7 +964,7 @@ function App() {
       setSearchLoading(false);
       return;
     }
-    if (isSfZipSearchQuery(debouncedSearch)) {
+    if (matchNeighborhoodQuery(debouncedSearch, knownNeighborhoods)) {
       setSearchResults([]);
       setSearchLoading(false);
       return;
@@ -971,7 +977,7 @@ function App() {
     setSearchResults(
       searchLoadedRestaurants(restaurants, debouncedSearch, 10, pinnedIdSet)
     );
-  }, [debouncedSearch, restaurants, restaurantsLoading, pinnedIdSet]);
+  }, [debouncedSearch, restaurants, restaurantsLoading, pinnedIdSet, knownNeighborhoods]);
 
   useEffect(() => {
     setSearchActiveIndex(searchResults.length ? 0 : -1);
@@ -1014,7 +1020,7 @@ function App() {
         }
         if (sidebarOpen) {
           setSidebarOpen(false);
-          setZipMenuOpen(false);
+          setNeighborhoodMenuOpen(false);
           return;
         }
         setHoverTooltip(null);
@@ -1044,7 +1050,7 @@ function App() {
     axios
       .get(`${API_BASE}/api/stats/neighborhoods`)
       .then((res) => {
-        if (!cancelled) setPostalCodes(res.data.postal_codes || []);
+        if (!cancelled) setNeighborhoodNames(res.data.neighborhoods || []);
       })
       .catch((err) => {
         if (!cancelled) console.error(err);
@@ -1056,14 +1062,14 @@ function App() {
 
   useEffect(() => {
     if (!sidebarOpen) {
-      setZipInput('');
-      setSelectedPostal('');
-      setZipMenuOpen(false);
+      setNeighborhoodInput('');
+      setSelectedNeighborhood('');
+      setNeighborhoodMenuOpen(false);
     }
   }, [sidebarOpen]);
 
   useEffect(() => {
-    if (!sidebarOpen || !selectedPostal) {
+    if (!sidebarOpen || !selectedNeighborhood) {
       setNeighborhoodDetail(null);
       setNeighborhoodError(null);
       return;
@@ -1073,7 +1079,7 @@ function App() {
     setNeighborhoodError(null);
     axios
       .get(`${API_BASE}/api/stats/neighborhoods`, {
-        params: { postal_code: selectedPostal },
+        params: { neighborhood: selectedNeighborhood },
       })
       .then((res) => {
         if (!cancelled) setNeighborhoodDetail(res.data);
@@ -1092,24 +1098,30 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [sidebarOpen, selectedPostal, statsEpoch]);
+  }, [sidebarOpen, selectedNeighborhood, statsEpoch]);
 
-  const searchZipHighlight = useMemo(() => {
-    return isSfZipSearchQuery(searchQuery) ? searchQuery.trim() : '';
-  }, [searchQuery]);
+  const searchNeighborhoodHighlight = useMemo(() => {
+    return matchNeighborhoodQuery(searchQuery, knownNeighborhoods);
+  }, [searchQuery, knownNeighborhoods]);
 
-  const zipForMapPaint = searchZipHighlight || selectedPostal;
+  const neighborhoodForMapPaint =
+    searchNeighborhoodHighlight || selectedNeighborhood;
 
-  const searchZipRestaurantCount = useMemo(() => {
-    if (!searchZipHighlight) return 0;
+  const searchNeighborhoodRestaurantCount = useMemo(() => {
+    if (!searchNeighborhoodHighlight) return 0;
     return restaurants.filter(
-      (r) => String(r.business_postal_code ?? '').trim() === searchZipHighlight
+      (r) =>
+        String(r.analysis_neighborhood ?? '').trim() ===
+        searchNeighborhoodHighlight
     ).length;
-  }, [searchZipHighlight, restaurants]);
+  }, [searchNeighborhoodHighlight, restaurants]);
 
   useEffect(() => {
-    if (!searchZipHighlight) return;
-    const c = computeZipCentroid(restaurants, searchZipHighlight);
+    if (!searchNeighborhoodHighlight) return;
+    const c = computeNeighborhoodCentroid(
+      restaurants,
+      searchNeighborhoodHighlight
+    );
     if (!c) return;
 
     const fly = () => {
@@ -1127,15 +1139,15 @@ function App() {
     return () => {
       window.clearTimeout(retryId);
     };
-  }, [searchZipHighlight, restaurants]);
+  }, [searchNeighborhoodHighlight, restaurants]);
 
   useEffect(() => {
-    if (!selectedPostal || !neighborhoodDetail) return;
-    if (neighborhoodDetail.postal_code !== selectedPostal) return;
-    if (searchZipHighlight) return;
+    if (!selectedNeighborhood || !neighborhoodDetail) return;
+    if (neighborhoodDetail.neighborhood !== selectedNeighborhood) return;
+    if (searchNeighborhoodHighlight) return;
     const map = mapRef.current?.getMap?.();
     if (!map) return;
-    const c = computeZipCentroid(restaurants, selectedPostal);
+    const c = computeNeighborhoodCentroid(restaurants, selectedNeighborhood);
     if (!c) return;
     map.flyTo({
       center: [c.lng, c.lat],
@@ -1143,7 +1155,12 @@ function App() {
       duration: 1400,
       essential: true,
     });
-  }, [selectedPostal, neighborhoodDetail, restaurants, searchZipHighlight]);
+  }, [
+    selectedNeighborhood,
+    neighborhoodDetail,
+    restaurants,
+    searchNeighborhoodHighlight,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current?.getMap();
@@ -1161,13 +1178,8 @@ function App() {
           );
           const lat = Number(r.latitude ?? r.business_latitude ?? r.lat);
           if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
-          const rawScore =
-            r.score ?? r.latest_inspection_score ?? r.inspection_score ?? null;
-          const score =
-            rawScore === null || rawScore === undefined || rawScore === ''
-              ? null
-              : Number(rawScore);
-          const postal_code = String(r.business_postal_code ?? '').trim();
+          const rating = restaurantRatingValue(r);
+          const neighborhood = String(r.analysis_neighborhood ?? '').trim();
           return {
             type: 'Feature',
             id: r.business_id,
@@ -1176,8 +1188,8 @@ function App() {
               business_id: r.business_id,
               business_name: r.business_name,
               business_address: r.business_address || '',
-              score: Number.isFinite(score) ? score : null,
-              postal_code,
+              rating: rating || '',
+              neighborhood,
             },
           };
         })
@@ -1199,13 +1211,13 @@ function App() {
   const restaurantsCirclePaint = useMemo(() => {
     const radiusCore = uniformDotSize
       ? dotRadiusBase
-      : circleRadiusByScore(dotRadiusBase);
+      : circleRadiusByRating(dotRadiusBase);
     const radiusExpr = [
       '+',
       radiusCore,
       ['case', ['boolean', ['feature-state', 'hover'], false], 3, 0],
     ];
-    if (!zipForMapPaint) {
+    if (!neighborhoodForMapPaint) {
       return {
         'circle-radius': radiusExpr,
         'circle-color': circleColorExpression,
@@ -1219,21 +1231,21 @@ function App() {
         'circle-opacity': 0.9,
       };
     }
-    const inZip = ['==', ['get', 'postal_code'], zipForMapPaint];
+    const inHood = ['==', ['get', 'neighborhood'], neighborhoodForMapPaint];
     return {
       'circle-radius': radiusExpr,
       'circle-color': circleColorExpression,
-      'circle-opacity': ['case', inZip, 0.92, 0.3],
+      'circle-opacity': ['case', inHood, 0.92, 0.3],
       'circle-stroke-width': [
         'case',
         ['boolean', ['feature-state', 'hover'], false],
-        ['case', inZip, 4, 2],
-        ['case', inZip, 3, 1.5],
+        ['case', inHood, 4, 2],
+        ['case', inHood, 3, 1.5],
       ],
       'circle-stroke-color': '#ffffff',
-      'circle-stroke-opacity': ['case', inZip, 1, 0.35],
+      'circle-stroke-opacity': ['case', inHood, 1, 0.35],
     };
-  }, [zipForMapPaint, dotRadiusBase, uniformDotSize]);
+  }, [neighborhoodForMapPaint, dotRadiusBase, uniformDotSize]);
 
   const loadPopupFromInspectionsEndpoint = async (
     businessId,
@@ -1251,7 +1263,7 @@ function App() {
       loading: true,
       name: fallback?.business_name || 'Restaurant',
       address: fallback ? formatAddress(fallback) : '',
-      score: null,
+      rating: null,
       date: null,
       violations: [],
       history: [],
@@ -1261,13 +1273,11 @@ function App() {
         `${API_BASE}/api/restaurants/${encodeURIComponent(businessId)}/inspections`
       );
       const latest = data.latest_inspection;
-      const scoredInspection = data.scored_inspection;
+      const ratedInspection = data.rated_inspection;
       const history = Array.isArray(data.inspections) ? data.inspections : [];
-      const scored =
-        scoredInspection ||
-        history.find(
-          (insp) => insp.inspection_score != null && insp.inspection_score !== ''
-        );
+      const rated =
+        ratedInspection ||
+        history.find((insp) => normalizeRating(insp.facility_rating_status));
       setPopup({
         businessId,
         lng: lon,
@@ -1275,16 +1285,15 @@ function App() {
         loading: false,
         name: data.business_name,
         address: formatAddress(data),
-        score: scored?.inspection_score ?? latest?.inspection_score ?? null,
-        date: scored?.inspection_date ?? latest?.inspection_date ?? null,
-        inspectionType: scored?.inspection_type ?? latest?.inspection_type ?? null,
-        lastVisit:
-          latest?.inspection_date &&
-          scored?.inspection_date &&
-          latest.inspection_date !== scored.inspection_date
-            ? latest.inspection_date
-            : null,
-        violations: scored?.violations ?? latest?.violations ?? [],
+        rating:
+          rated?.facility_rating_status ??
+          latest?.facility_rating_status ??
+          null,
+        date: latest?.inspection_date ?? rated?.inspection_date ?? null,
+        inspectionType: latest?.inspection_type ?? rated?.inspection_type ?? null,
+        permitType: data.permit_type || fallback?.permit_type || null,
+        notes: latest?.inspection_notes || latest?.suspension_notes || null,
+        violations: latest?.violations ?? rated?.violations ?? [],
         history,
         fetchError: false,
       });
@@ -1297,9 +1306,9 @@ function App() {
         loading: false,
         name: fallback?.business_name || 'Restaurant',
         address: fallback ? formatAddress(fallback) : '',
-        score:
-          fallback?.latest_inspection_score ??
-          fallback?.score ??
+        rating:
+          fallback?.latest_rating_status ??
+          fallback?.rating ??
           null,
         date: fallback?.latest_inspection_date ?? null,
         inspectionType: null,
@@ -1375,15 +1384,13 @@ function App() {
       map.getCanvas().style.cursor = 'pointer';
 
       const name = f.properties?.business_name ?? 'Restaurant';
-      const score = f.properties?.score;
-      const scoreLabel =
-        score != null && score !== '' ? String(score) : 'No score';
+      const rating = normalizeRating(f.properties?.rating);
       setHoverTooltip({
         x,
         y,
         name,
-        score,
-        scoreLabel,
+        rating,
+        ratingLabel: rating || 'No rating',
       });
     },
     [popup, clearDotHover, mapLayerMode]
@@ -1452,11 +1459,12 @@ function App() {
       }
       return;
     }
-    const zipMode =
-      isSfZipSearchQuery(searchQuery.trim()) ||
-      isSfZipSearchQuery(debouncedSearch);
+    const neighborhoodMode = Boolean(
+      matchNeighborhoodQuery(searchQuery.trim(), knownNeighborhoods) ||
+        matchNeighborhoodQuery(debouncedSearch, knownNeighborhoods)
+    );
     if (e.key === 'ArrowDown') {
-      if (zipMode) return;
+      if (neighborhoodMode) return;
       e.preventDefault();
       setSearchOpen(true);
       setSearchActiveIndex((i) => {
@@ -1466,7 +1474,7 @@ function App() {
       return;
     }
     if (e.key === 'ArrowUp') {
-      if (zipMode || !searchOpen) return;
+      if (neighborhoodMode || !searchOpen) return;
       e.preventDefault();
       setSearchActiveIndex((i) => {
         if (!searchResults.length) return -1;
@@ -1475,7 +1483,7 @@ function App() {
       return;
     }
     if (e.key === 'Enter') {
-      if (zipMode) {
+      if (neighborhoodMode) {
         searchInputRef.current?.blur();
         setSearchOpen(false);
         return;
@@ -1602,18 +1610,12 @@ function App() {
   const showDropdown =
     searchOpen &&
     Boolean(debouncedSearch) &&
-    !isSfZipSearchQuery(searchQuery.trim()) &&
-    !isSfZipSearchQuery(debouncedSearch);
+    !matchNeighborhoodQuery(searchQuery.trim(), knownNeighborhoods) &&
+    !matchNeighborhoodQuery(debouncedSearch, knownNeighborhoods);
 
-  const dist = citywideStats?.restaurant_score_distribution;
+  const dist = citywideStats?.restaurant_rating_distribution;
   const distMax = dist
-    ? Math.max(
-        dist['90_plus'],
-        dist['70_to_89'],
-        dist.below_70,
-        dist.no_score,
-        1
-      )
+    ? Math.max(dist.pass, dist.conditional, dist.closure, dist.no_rating, 1)
     : 1;
   const dataThrough = formatDataThrough(dataMeta?.latest_inspection_date);
   const filtersAllOn = filtersAreAllOn(mapFilters);
@@ -1630,31 +1632,31 @@ function App() {
     setMapFilters((prev) => ({ ...prev, [key]: checked }));
   };
 
-  const pickNeighborhoodZip = useCallback((z) => {
-    setZipInput(z);
-    setSelectedPostal(z);
-    setZipMenuOpen(false);
+  const pickNeighborhood = useCallback((name) => {
+    setNeighborhoodInput(name);
+    setSelectedNeighborhood(name);
+    setNeighborhoodMenuOpen(false);
   }, []);
 
-  const handleZipInputChange = useCallback((e) => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 5);
-    setZipInput(digits);
-    setZipMenuOpen(true);
-    setSelectedPostal((prev) => (digits === prev ? prev : ''));
+  const handleNeighborhoodInputChange = useCallback((e) => {
+    const value = e.target.value;
+    setNeighborhoodInput(value);
+    setNeighborhoodMenuOpen(true);
+    setSelectedNeighborhood((prev) => (value === prev ? prev : ''));
   }, []);
 
-  const handleZipInputBlur = useCallback(
+  const handleNeighborhoodInputBlur = useCallback(
     (e) => {
       window.setTimeout(() => {
-        setZipMenuOpen(false);
-        const d = e.target.value.replace(/\D/g, '').slice(0, 5);
-        if (d.length === 5 && sfZipCodes.includes(d)) {
-          setZipInput(d);
-          setSelectedPostal(d);
+        setNeighborhoodMenuOpen(false);
+        const match = matchNeighborhoodQuery(e.target.value, knownNeighborhoods);
+        if (match) {
+          setNeighborhoodInput(match);
+          setSelectedNeighborhood(match);
         }
       }, 180);
     },
-    [sfZipCodes]
+    [knownNeighborhoods]
   );
 
   const handleResetView = useCallback(() => {
@@ -1753,21 +1755,21 @@ function App() {
               id={RESTAURANTS_HEATMAP_LAYER_ID}
               type="heatmap"
               paint={restaurantsHeatmapPaint}
-              filter={scoreLayerFilter}
+              filter={ratingLayerFilter}
               layout={heatmapLayerLayout}
             />
             <Layer
               id={RESTAURANTS_LAYER_ID}
               type="circle"
               paint={restaurantsCirclePaint}
-              filter={scoreLayerFilter}
+              filter={ratingLayerFilter}
               layout={pinsLayerLayout}
             />
             <Layer
               id={RESTAURANTS_HIT_LAYER_ID}
               type="circle"
               paint={restaurantHitCirclePaint}
-              filter={scoreLayerFilter}
+              filter={ratingLayerFilter}
               layout={hitLayerLayout}
             />
           </Source>
@@ -1854,7 +1856,7 @@ function App() {
                               address: popup.address,
                               lat: popup.lat,
                               lng: popup.lng,
-                              score: popup.score,
+                              rating: popup.rating,
                             })
                           }
                         >
@@ -1883,15 +1885,10 @@ function App() {
                     </div>
                     <dl className="popup-meta">
                       <div>
-                        <dt>Latest score</dt>
+                        <dt>Latest rating</dt>
                         <dd>
-                          <span className={scoreClassName(popup.score)}>
-                            {popup.score != null && popup.score !== ''
-                              ? popup.score
-                              : '—'}
-                          </span>
-                          <span className="popup-score-band">
-                            {scoreBandLabel(popup.score)}
+                          <span className={ratingClassName(popup.rating)}>
+                            {normalizeRating(popup.rating) || '—'}
                           </span>
                         </dd>
                       </div>
@@ -1903,11 +1900,11 @@ function App() {
                     {popup.inspectionType && (
                       <p className="popup-type">{popup.inspectionType}</p>
                     )}
-                    {popup.lastVisit && (
-                      <p className="popup-type">
-                        Last visit {formatInspectionDate(popup.lastVisit)} (no
-                        score)
-                      </p>
+                    {popup.permitType && (
+                      <p className="popup-type">{popup.permitType}</p>
+                    )}
+                    {popup.notes && (
+                      <p className="popup-note">{popup.notes}</p>
                     )}
                     {popup.fetchError && (
                       <p className="popup-note">
@@ -1915,7 +1912,7 @@ function App() {
                       </p>
                     )}
                     <div className="popup-violations">
-                      <h3>Violations (latest scored inspection)</h3>
+                      <h3>Violations (latest inspection)</h3>
                       {popup.violations.length === 0 ? (
                         <p className="popup-empty">No violations recorded.</p>
                       ) : (
@@ -1953,11 +1950,8 @@ function App() {
                               <span className="popup-history-date">
                                 {formatInspectionDate(insp.inspection_date)}
                               </span>
-                              <span className={scoreClassName(insp.inspection_score)}>
-                                {insp.inspection_score != null &&
-                                insp.inspection_score !== ''
-                                  ? insp.inspection_score
-                                  : '—'}
+                              <span className={ratingClassName(insp.facility_rating_status)}>
+                                {normalizeRating(insp.facility_rating_status) || '—'}
                               </span>
                             </li>
                           ))}
@@ -1981,10 +1975,8 @@ function App() {
             role="tooltip"
           >
             <div className="map-dot-tooltip-name">{hoverTooltip.name}</div>
-            <div className={tooltipScoreClassName(hoverTooltip.score)}>
-              {hoverTooltip.scoreLabel === 'No score'
-                ? 'No score'
-                : `Score ${hoverTooltip.scoreLabel} · ${scoreBandLabel(hoverTooltip.score)}`}
+            <div className={tooltipRatingClassName(hoverTooltip.rating)}>
+              {hoverTooltip.ratingLabel}
             </div>
           </div>
         )}
@@ -2188,12 +2180,9 @@ function App() {
                     >
                       <span className="sidebar-rank-name">{r.business_name}</span>
                       <span
-                        className={`sidebar-rank-score ${scoreClassName(r.latest_inspection_score)}`}
+                        className={`sidebar-rank-score ${ratingClassName(r.latest_rating_status)}`}
                       >
-                        {r.latest_inspection_score != null &&
-                        r.latest_inspection_score !== ''
-                          ? r.latest_inspection_score
-                          : '—'}
+                        {normalizeRating(r.latest_rating_status) || '—'}
                       </span>
                     </button>
                     {pinMapsHref && (
@@ -2237,23 +2226,23 @@ function App() {
                   restaurants
                 </p>
                 <p className="sidebar-stat-line">
-                  Avg latest score:{' '}
+                  Latest pass rate:{' '}
                   <strong>
-                    {citywideStats.avg_latest_inspection_score != null
-                      ? citywideStats.avg_latest_inspection_score
+                    {citywideStats.pass_rate != null
+                      ? `${citywideStats.pass_rate}%`
                       : '—'}
                   </strong>
                 </p>
                 {dataThrough && (
-                  <p className="sidebar-muted">Scores through {dataThrough}</p>
+                  <p className="sidebar-muted">Ratings through {dataThrough}</p>
                 )}
-                <p className="sidebar-chart-label">Score distribution</p>
-                <div className="sidebar-bars" role="img" aria-label="Score distribution">
+                <p className="sidebar-chart-label">Rating distribution</p>
+                <div className="sidebar-bars" role="img" aria-label="Rating distribution">
                   {[
-                    { key: '90_plus', label: '90+', color: '#22c55e' },
-                    { key: '70_to_89', label: '70–89', color: '#eab308' },
-                    { key: 'below_70', label: '<70', color: '#ef4444' },
-                    { key: 'no_score', label: 'No score', color: '#9ca3af' },
+                    { key: 'pass', label: 'Pass', color: '#22c55e' },
+                    { key: 'conditional', label: 'Conditional', color: '#eab308' },
+                    { key: 'closure', label: 'Closure', color: '#ef4444' },
+                    { key: 'no_rating', label: 'No rating', color: '#9ca3af' },
                   ].map(({ key, label, color }) => {
                     const n = dist?.[key] ?? 0;
                     const pct = Math.round((n / distMax) * 100);
@@ -2274,13 +2263,12 @@ function App() {
                     );
                   })}
                 </div>
-                <p className="sidebar-chart-label">Lowest scores citywide</p>
+                <p className="sidebar-chart-label">Needs attention citywide</p>
                 <p className="sidebar-help">
-                  Most places score 90+. These are the inspections that stand
-                  out.
+                  Closures and conditional passes, most recent inspection first.
                 </p>
                 {(citywideStats.lowest_restaurants || []).length === 0 ? (
-                  <p className="sidebar-muted">No scored restaurants.</p>
+                  <p className="sidebar-muted">No rated restaurants.</p>
                 ) : (
                   <ol className="sidebar-rank-list">
                     {citywideStats.lowest_restaurants.map((r) => (
@@ -2293,9 +2281,9 @@ function App() {
                         >
                           <span className="sidebar-rank-name">{r.business_name}</span>
                           <span
-                            className={`sidebar-rank-score ${scoreClassName(r.latest_inspection_score)}`}
+                            className={`sidebar-rank-score ${ratingClassName(r.latest_rating_status)}`}
                           >
-                            {r.latest_inspection_score}
+                            {normalizeRating(r.latest_rating_status) || '—'}
                           </span>
                         </button>
                       </li>
@@ -2309,51 +2297,50 @@ function App() {
           <section className="sidebar-section">
             <h3 className="sidebar-section-title">Neighborhood breakdown</h3>
             <div className="sidebar-zip-wrap">
-              <label className="sidebar-select-label" htmlFor="zip-input">
-                ZIP code
+              <label className="sidebar-select-label" htmlFor="neighborhood-input">
+                Neighborhood
               </label>
               <input
-                id="zip-input"
+                id="neighborhood-input"
                 type="text"
-                inputMode="numeric"
-                autoComplete="postal-code"
-                placeholder="Search 941xx…"
+                autoComplete="off"
+                placeholder="Search Mission, Tenderloin…"
                 className="sidebar-zip-input"
-                value={zipInput}
-                aria-expanded={zipMenuOpen}
-                aria-controls="zip-suggestions"
+                value={neighborhoodInput}
+                aria-expanded={neighborhoodMenuOpen}
+                aria-controls="neighborhood-suggestions"
                 aria-autocomplete="list"
                 role="combobox"
-                onChange={handleZipInputChange}
-                onFocus={() => setZipMenuOpen(true)}
-                onBlur={handleZipInputBlur}
+                onChange={handleNeighborhoodInputChange}
+                onFocus={() => setNeighborhoodMenuOpen(true)}
+                onBlur={handleNeighborhoodInputBlur}
               />
-              {zipMenuOpen && (
+              {neighborhoodMenuOpen && (
                 <ul
-                  id="zip-suggestions"
+                  id="neighborhood-suggestions"
                   className="sidebar-zip-dropdown"
                   role="listbox"
                   onMouseDown={(e) => e.preventDefault()}
                 >
-                  {filteredSfZips.length === 0 ? (
+                  {filteredNeighborhoods.length === 0 ? (
                     <li className="sidebar-zip-dropdown-status">
-                      {sfZipCodes.length === 0
-                        ? 'No valid 941xx ZIPs in data'
-                        : !zipInput
+                      {knownNeighborhoods.length === 0
+                        ? 'No neighborhoods in data'
+                        : !neighborhoodInput
                           ? 'Start typing to filter…'
-                          : 'No matching ZIP'}
+                          : 'No matching neighborhood'}
                     </li>
                   ) : (
-                    filteredSfZips.map((z) => (
-                      <li key={z} role="presentation">
+                    filteredNeighborhoods.map((name) => (
+                      <li key={name} role="presentation">
                         <button
                           type="button"
                           className="sidebar-zip-option"
                           role="option"
-                          aria-selected={selectedPostal === z}
-                          onClick={() => pickNeighborhoodZip(z)}
+                          aria-selected={selectedNeighborhood === name}
+                          onClick={() => pickNeighborhood(name)}
                         >
-                          {z}
+                          {name}
                         </button>
                       </li>
                     ))
@@ -2376,16 +2363,16 @@ function App() {
                   restaurants
                 </p>
                 <p className="sidebar-stat-line">
-                  Avg latest score:{' '}
+                  Pass rate:{' '}
                   <strong>
-                    {neighborhoodDetail.avg_latest_inspection_score != null
-                      ? neighborhoodDetail.avg_latest_inspection_score
+                    {neighborhoodDetail.pass_rate != null
+                      ? `${neighborhoodDetail.pass_rate}%`
                       : '—'}
                   </strong>
                 </p>
-                <p className="sidebar-subheading">Highest scores</p>
+                <p className="sidebar-subheading">Highest ratings</p>
                 {(neighborhoodDetail.top_restaurants || []).length === 0 ? (
-                  <p className="sidebar-muted">No scored restaurants in this ZIP.</p>
+                  <p className="sidebar-muted">No rated restaurants here.</p>
                 ) : (
                   <ol className="sidebar-rank-list">
                     {neighborhoodDetail.top_restaurants.map((r) => (
@@ -2397,17 +2384,17 @@ function App() {
                           title={`Show ${r.business_name} on the map`}
                         >
                           <span className="sidebar-rank-name">{r.business_name}</span>
-                          <span className={`sidebar-rank-score ${scoreClassName(r.latest_inspection_score)}`}>
-                            {r.latest_inspection_score}
+                          <span className={`sidebar-rank-score ${ratingClassName(r.latest_rating_status)}`}>
+                            {normalizeRating(r.latest_rating_status) || '—'}
                           </span>
                         </button>
                       </li>
                     ))}
                   </ol>
                 )}
-                <p className="sidebar-subheading">Lowest scores</p>
+                <p className="sidebar-subheading">Needs attention</p>
                 {(neighborhoodDetail.bottom_restaurants || []).length === 0 ? (
-                  <p className="sidebar-muted">No scored restaurants in this ZIP.</p>
+                  <p className="sidebar-muted">No rated restaurants here.</p>
                 ) : (
                   <ol className="sidebar-rank-list">
                     {neighborhoodDetail.bottom_restaurants.map((r) => (
@@ -2419,8 +2406,8 @@ function App() {
                           title={`Show ${r.business_name} on the map`}
                         >
                           <span className="sidebar-rank-name">{r.business_name}</span>
-                          <span className={`sidebar-rank-score ${scoreClassName(r.latest_inspection_score)}`}>
-                            {r.latest_inspection_score}
+                          <span className={`sidebar-rank-score ${ratingClassName(r.latest_rating_status)}`}>
+                            {normalizeRating(r.latest_rating_status) || '—'}
                           </span>
                         </button>
                       </li>
@@ -2444,14 +2431,14 @@ function App() {
                   className="sidebar-pill-btn"
                   onClick={() =>
                     setMapFilters({
-                      good: false,
-                      mid: true,
-                      bad: true,
-                      noScore: false,
+                      pass: false,
+                      conditional: true,
+                      closure: true,
+                      noRating: false,
                     })
                   }
                 >
-                  Below 90
+                  Not a Pass
                 </button>
                 <button
                   type="button"
@@ -2465,10 +2452,10 @@ function App() {
                   className="sidebar-pill-btn"
                   onClick={() =>
                     setMapFilters({
-                      good: false,
-                      mid: false,
-                      bad: false,
-                      noScore: false,
+                      pass: false,
+                      conditional: false,
+                      closure: false,
+                      noRating: false,
                     })
                   }
                 >
@@ -2477,15 +2464,15 @@ function App() {
               </div>
             </div>
             <p className="sidebar-help">
-              Show dots by latest inspection score. 90+ is still good on the
-              LIVES scale; colors get darker green as scores approach 100.
+              Show dots by the latest inspection rating. Closures render larger
+              so they stay visible among a Pass majority.
             </p>
             <ul className="sidebar-checklist">
               {[
-                { key: 'good', label: '90+ (green)' },
-                { key: 'mid', label: '70–89 (yellow)' },
-                { key: 'bad', label: 'Below 70 (red)' },
-                { key: 'noScore', label: 'No score (gray)' },
+                { key: 'pass', label: 'Pass (green)' },
+                { key: 'conditional', label: 'Conditional Pass (yellow)' },
+                { key: 'closure', label: 'Closure (red)' },
+                { key: 'noRating', label: 'No rating (gray)' },
               ].map(({ key, label }) => (
                 <li key={key}>
                   <label className="sidebar-check-label">
@@ -2510,20 +2497,30 @@ function App() {
                 id="dot-stack-slider"
                 className="sidebar-stack-slider"
                 type="range"
-                min="50"
-                max="100"
+                min="0"
+                max="2"
                 step="1"
-                value={dotStackTarget}
-                aria-valuemin={50}
-                aria-valuemax={100}
-                aria-valuenow={dotStackTarget}
+                value={Math.max(
+                  0,
+                  ['closure', 'conditional', 'pass'].indexOf(dotStackTarget)
+                )}
+                aria-valuemin={0}
+                aria-valuemax={2}
+                aria-valuenow={Math.max(
+                  0,
+                  ['closure', 'conditional', 'pass'].indexOf(dotStackTarget)
+                )}
                 aria-valuetext={stackBandLabel(dotStackTarget)}
-                onChange={(e) => setDotStackTarget(Number(e.target.value))}
+                onChange={(e) =>
+                  setDotStackTarget(
+                    ['closure', 'conditional', 'pass'][Number(e.target.value)]
+                  )
+                }
               />
               <div className="sidebar-stack-labels" aria-hidden>
-                <span>Red</span>
-                <span>Yellow</span>
-                <span>Green</span>
+                <span>Closure</span>
+                <span>Conditional</span>
+                <span>Pass</span>
               </div>
               <label className="sidebar-check-label sidebar-check-label--spaced">
                 <input
@@ -2548,7 +2545,7 @@ function App() {
           <span className="app-brand-mark" aria-hidden />
           <span>
             <span className="app-brand-title">SF Restaurant Safety</span>
-            <span className="app-brand-sub">Health inspection scores</span>
+            <span className="app-brand-sub">Health inspection ratings</span>
           </span>
         </button>
         <div className="search-input-wrap">
@@ -2556,11 +2553,11 @@ function App() {
             ref={searchInputRef}
             type="search"
             className="search-input"
-            placeholder="Search restaurants or ZIP…"
+            placeholder="Search restaurants or neighborhood…"
             value={searchQuery}
             autoComplete="off"
             role="combobox"
-            aria-label="Search restaurants or ZIP code"
+            aria-label="Search restaurants or neighborhood"
             aria-expanded={showDropdown}
             aria-controls="search-results-list"
             aria-activedescendant={activeSearchOptionId}
@@ -2591,17 +2588,18 @@ function App() {
             </kbd>
           )}
         </div>
-        {searchZipHighlight && (
+        {searchNeighborhoodHighlight && (
           <div className="search-zip-badge" role="status">
             <span className="search-zip-badge-text">
-              Showing {searchZipRestaurantCount} restaurant
-              {searchZipRestaurantCount === 1 ? '' : 's'} in {searchZipHighlight}
+              Showing {searchNeighborhoodRestaurantCount} restaurant
+              {searchNeighborhoodRestaurantCount === 1 ? '' : 's'} in{' '}
+              {searchNeighborhoodHighlight}
             </span>
             <button
               type="button"
               className="search-zip-badge-clear"
               onClick={clearSearch}
-              aria-label="Clear ZIP search"
+              aria-label="Clear neighborhood search"
             >
               ×
             </button>
@@ -2641,18 +2639,15 @@ function App() {
                     <span className="search-result-address">
                       {formatAddress(r)}
                     </span>
-                    <span className={`search-result-score ${scoreClassName(r.latest_inspection_score)}`}>
-                      {r.latest_inspection_score != null &&
-                      r.latest_inspection_score !== ''
-                        ? r.latest_inspection_score
-                        : '—'}
+                    <span className={`search-result-score ${ratingClassName(r.latest_rating_status)}`}>
+                      {normalizeRating(r.latest_rating_status) || '—'}
                     </span>
                   </button>
                 </li>
               ))}
           </ul>
         )}
-        {userLocation && nearbyOpen && !showDropdown && !searchZipHighlight && (
+        {userLocation && nearbyOpen && !showDropdown && !searchNeighborhoodHighlight && (
           <div className="nearby-panel">
             <div className="nearby-panel-header">
               <h2 className="nearby-panel-title">Nearby</h2>
@@ -2667,12 +2662,12 @@ function App() {
             </div>
             {nearbyPlaces.length === 0 ? (
               <p className="nearby-panel-empty">
-                No restaurants match the current score filters near you.
+                No restaurants match the current rating filters near you.
               </p>
             ) : (
               <ul className="nearby-panel-list">
                 {nearbyPlaces.map(({ r, miles }) => {
-                  const score = restaurantScoreValue(r);
+                  const rating = restaurantRatingValue(r);
                   return (
                     <li key={`near-${r.business_id}`}>
                       <button
@@ -2687,8 +2682,8 @@ function App() {
                           <span className="nearby-panel-dist">
                             {formatDistanceMiles(miles)}
                           </span>
-                          <span className={`nearby-panel-score ${scoreClassName(score)}`}>
-                            {score != null ? score : '—'}
+                          <span className={`nearby-panel-score ${ratingClassName(rating)}`}>
+                            {rating || '—'}
                           </span>
                         </span>
                       </button>
@@ -2735,7 +2730,7 @@ function App() {
               Inspection heat ({restaurants.length})
             </div>
             <p className="map-legend-hint">
-              Hotter areas are denser or have lower scores
+              Hotter areas are denser or have more Closures / Conditional Passes
             </p>
             <div className="legend-heat-bar" aria-hidden />
             <div className="legend-heat-labels">
@@ -2748,18 +2743,18 @@ function App() {
         ) : (
           <>
             <div className="map-legend-title">
-              Inspection score ({restaurants.length})
+              Inspection rating ({restaurants.length})
             </div>
             <p className="map-legend-hint">
               {dataThrough
                 ? `Through ${dataThrough}. ${stackLegendHint(dotStackTarget)}.`
                 : stackLegendHint(dotStackTarget)}
             </p>
-            <div className="legend-score-bar" aria-hidden />
+            <div className="legend-rating-bar" aria-hidden />
             <div className="legend-heat-labels">
-              <span>Low</span>
-              <span>90</span>
-              <span>100</span>
+              <span>Closure</span>
+              <span>Conditional</span>
+              <span>Pass</span>
             </div>
           </>
         )}
@@ -2768,7 +2763,7 @@ function App() {
             <div
               className="legend-filter-row"
               role="group"
-              aria-label="Filter by inspection score"
+              aria-label="Filter by inspection rating"
             >
               {LEGEND_FILTER_CHIPS.map(({ key, label, color }) => (
                 <button
@@ -2793,7 +2788,7 @@ function App() {
                 className="legend-show-all"
                 onClick={() => setMapFilters({ ...defaultMapFilters })}
               >
-                Show all scores
+                Show all ratings
               </button>
             )}
           </>
@@ -2813,8 +2808,8 @@ function App() {
               SF Restaurant Safety Map
             </h1>
             <p className="app-splash-sub">
-              Tap a pin for the latest inspection score, or search by name or
-              ZIP.
+              Tap a pin for the latest inspection rating, or search by name or
+              neighborhood.
             </p>
             <div className="app-splash-dots" aria-hidden>
               <span className="app-splash-dot app-splash-dot--good" />

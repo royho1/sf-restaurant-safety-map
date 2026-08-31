@@ -10,6 +10,8 @@ INDEX_STATEMENTS = (
     "ON inspections (business_id, inspection_date DESC)",
     "CREATE INDEX IF NOT EXISTS idx_restaurants_postal "
     "ON restaurants (business_postal_code)",
+    "CREATE INDEX IF NOT EXISTS idx_restaurants_neighborhood "
+    "ON restaurants (analysis_neighborhood)",
     "CREATE INDEX IF NOT EXISTS idx_violations_inspection "
     "ON violations (inspection_id)",
     "CREATE INDEX IF NOT EXISTS idx_violations_business "
@@ -21,34 +23,33 @@ CREATE TABLE IF NOT EXISTS latest_scores (
     business_id TEXT PRIMARY KEY,
     inspection_id TEXT,
     inspection_date TEXT,
-    inspection_score INTEGER
+    facility_rating_status TEXT
 )
 """
 
 LATEST_SCORES_INSERT = """
 INSERT INTO latest_scores (
-    business_id, inspection_id, inspection_date, inspection_score
+    business_id, inspection_id, inspection_date, facility_rating_status
 )
-SELECT business_id, inspection_id, inspection_date, inspection_score
+SELECT business_id, inspection_id, inspection_date, facility_rating_status
 FROM (
     SELECT
         business_id,
         inspection_id,
         inspection_date,
-        inspection_score,
+        facility_rating_status,
         ROW_NUMBER() OVER (
             PARTITION BY business_id
             ORDER BY inspection_date DESC, inspection_id DESC
         ) AS rn
     FROM inspections
-    WHERE inspection_score IS NOT NULL
 )
 WHERE rn = 1
 """
 
 
 def rebuild_latest_scores(conn: sqlite3.Connection) -> None:
-    """Materialize the latest scored inspection per restaurant.
+    """Materialize the latest inspection per restaurant.
 
     List/stats/map queries join this table instead of running a window
     function over all inspections on every request.
@@ -57,8 +58,8 @@ def rebuild_latest_scores(conn: sqlite3.Connection) -> None:
     conn.execute(LATEST_SCORES_DDL)
     conn.execute(LATEST_SCORES_INSERT)
     conn.execute(
-        "CREATE INDEX IF NOT EXISTS idx_latest_scores_score "
-        "ON latest_scores (inspection_score)"
+        "CREATE INDEX IF NOT EXISTS idx_latest_scores_rating "
+        "ON latest_scores (facility_rating_status)"
     )
 
 

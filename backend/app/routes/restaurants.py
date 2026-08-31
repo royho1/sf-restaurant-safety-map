@@ -64,7 +64,6 @@ def list_restaurants():
     search = request.args.get("search", type=str)
     name = request.args.get("name", type=str)
     name_term = (search or name or "").strip() or None
-    postal_code = request.args.get("postal_code", type=str)
     neighborhood = (request.args.get("neighborhood") or "").strip() or None
     rating = (request.args.get("rating") or "").strip() or None
     has_coordinates = _parse_bool(request.args.get("has_coordinates"))
@@ -86,9 +85,6 @@ def list_restaurants():
     if name_term:
         where.append("r.business_name LIKE ?")
         params.append(f"%{name_term}%")
-    if postal_code:
-        where.append("r.business_postal_code = ?")
-        params.append(postal_code)
     if neighborhood:
         where.append("r.analysis_neighborhood = ?")
         params.append(neighborhood)

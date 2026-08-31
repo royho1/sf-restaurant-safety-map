@@ -105,11 +105,7 @@ def citywide_stats():
 def neighborhood_stats():
     """Without neighborhood: list names. With neighborhood: detail + top/bottom."""
     db = get_db()
-    neighborhood = (
-        request.args.get("neighborhood", type=str)
-        or request.args.get("postal_code", type=str)
-        or ""
-    ).strip()
+    neighborhood = (request.args.get("neighborhood", type=str) or "").strip()
 
     if not neighborhood:
         names = db.execute(

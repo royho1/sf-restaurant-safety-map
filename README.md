@@ -184,7 +184,6 @@ Paginated, filterable list of restaurants. Each row includes the latest inspecti
 
 Query params:
 - `search` or `name` — substring match on `business_name` (case-insensitive `LIKE`).
-- `postal_code` — exact match.
 - `neighborhood` — exact match on `analysis_neighborhood`.
 - `rating` — exact match on the latest rating (`Pass`, `Conditional Pass`, or `Closure`).
 - `has_coordinates=true|false` — restrict to restaurants with or without lat/lng.

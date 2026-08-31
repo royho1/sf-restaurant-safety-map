@@ -1289,11 +1289,23 @@ function App() {
           rated?.facility_rating_status ??
           latest?.facility_rating_status ??
           null,
-        date: latest?.inspection_date ?? rated?.inspection_date ?? null,
-        inspectionType: latest?.inspection_type ?? rated?.inspection_type ?? null,
+        date: rated?.inspection_date ?? latest?.inspection_date ?? null,
+        inspectionType: rated?.inspection_type ?? latest?.inspection_type ?? null,
         permitType: data.permit_type || fallback?.permit_type || null,
-        notes: latest?.inspection_notes || latest?.suspension_notes || null,
-        violations: latest?.violations ?? rated?.violations ?? [],
+        notes:
+          rated?.inspection_notes ||
+          rated?.suspension_notes ||
+          latest?.inspection_notes ||
+          latest?.suspension_notes ||
+          null,
+        lastVisit:
+          latest?.inspection_date &&
+          rated?.inspection_date &&
+          latest.inspection_date !== rated.inspection_date
+            ? latest.inspection_date
+            : null,
+        lastVisitType: latest?.inspection_type || null,
+        violations: rated?.violations ?? latest?.violations ?? [],
         history,
         fetchError: false,
       });
@@ -1900,6 +1912,13 @@ function App() {
                     {popup.inspectionType && (
                       <p className="popup-type">{popup.inspectionType}</p>
                     )}
+                    {popup.lastVisit && (
+                      <p className="popup-type">
+                        Last visit {formatInspectionDate(popup.lastVisit)}
+                        {popup.lastVisitType ? ` (${popup.lastVisitType})` : ''}{' '}
+                        (no rating)
+                      </p>
+                    )}
                     {popup.permitType && (
                       <p className="popup-type">{popup.permitType}</p>
                     )}
@@ -1912,7 +1931,7 @@ function App() {
                       </p>
                     )}
                     <div className="popup-violations">
-                      <h3>Violations (latest inspection)</h3>
+                      <h3>Violations (this rating)</h3>
                       {popup.violations.length === 0 ? (
                         <p className="popup-empty">No violations recorded.</p>
                       ) : (

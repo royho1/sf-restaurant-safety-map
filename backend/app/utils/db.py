@@ -1,9 +1,12 @@
 """SQLite connection helpers shared by the route blueprints."""
 
+import logging
 import sqlite3
 from pathlib import Path
 
 from flask import current_app, g
+
+logger = logging.getLogger(__name__)
 
 INDEX_STATEMENTS = (
     "CREATE INDEX IF NOT EXISTS idx_inspections_business_date "
@@ -43,13 +46,15 @@ FROM (
             ORDER BY inspection_date DESC, inspection_id DESC
         ) AS rn
     FROM inspections
+    WHERE facility_rating_status IS NOT NULL
+      AND TRIM(facility_rating_status) <> ''
 )
 WHERE rn = 1
 """
 
 
 def rebuild_latest_scores(conn: sqlite3.Connection) -> None:
-    """Materialize the latest inspection per restaurant.
+    """Materialize the latest rated inspection per restaurant.
 
     List/stats/map queries join this table instead of running a window
     function over all inspections on every request.
@@ -63,6 +68,25 @@ def rebuild_latest_scores(conn: sqlite3.Connection) -> None:
     )
 
 
+def table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table,),
+    ).fetchone()
+    if exists is None:
+        return set()
+    return {row[1] for row in conn.execute(f'PRAGMA table_info("{table}")')}
+
+
+def schema_is_current(conn: sqlite3.Connection) -> bool:
+    restaurants = table_columns(conn, "restaurants")
+    inspections = table_columns(conn, "inspections")
+    return (
+        "analysis_neighborhood" in restaurants
+        and "facility_rating_status" in inspections
+    )
+
+
 def _db_path() -> Path:
     return Path(current_app.config["DATABASE_PATH"])
 
@@ -72,19 +96,30 @@ def ensure_indexes(db_path: Path | None = None) -> None:
     path = Path(db_path) if db_path is not None else _db_path()
     if not path.is_file():
         return
-    with sqlite3.connect(path) as conn:
-        conn.execute("PRAGMA foreign_keys = ON")
-        for sql in INDEX_STATEMENTS:
-            conn.execute(sql)
-        needs_scores = conn.execute(
-            """
-            SELECT 1 FROM sqlite_master
-            WHERE type = 'table' AND name = 'latest_scores'
-            """
-        ).fetchone() is None
-        if needs_scores:
-            rebuild_latest_scores(conn)
-        conn.commit()
+    try:
+        with sqlite3.connect(path) as conn:
+            conn.execute("PRAGMA foreign_keys = ON")
+            restaurant_cols = table_columns(conn, "restaurants")
+            inspection_cols = table_columns(conn, "inspections")
+            for sql in INDEX_STATEMENTS:
+                if (
+                    "analysis_neighborhood" in sql
+                    and "analysis_neighborhood" not in restaurant_cols
+                ):
+                    logger.warning(
+                        "skipping neighborhood index; database schema is stale "
+                        "(run python scripts/load_db.py)"
+                    )
+                    continue
+                try:
+                    conn.execute(sql)
+                except sqlite3.OperationalError as exc:
+                    logger.warning("skipping index (%s): %s", sql.split()[5], exc)
+            if "facility_rating_status" in inspection_cols:
+                rebuild_latest_scores(conn)
+            conn.commit()
+    except sqlite3.OperationalError as exc:
+        logger.warning("ensure_indexes skipped (%s)", exc)
 
 
 def get_db() -> sqlite3.Connection:

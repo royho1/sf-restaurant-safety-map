@@ -240,6 +240,8 @@ def main() -> None:
                             ORDER BY inspection_date DESC, inspection_id DESC
                         ) AS rn
                     FROM inspections
+                    WHERE facility_rating_status IS NOT NULL
+                      AND TRIM(facility_rating_status) <> ''
                 )
                 WHERE rn = 1
                 """

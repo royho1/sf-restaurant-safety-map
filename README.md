@@ -1,8 +1,8 @@
 # SF Restaurant Safety Map
 
-Interactive web app that maps every San Francisco restaurant inspection score on a Mapbox-rendered map. Click a dot to see the latest score, the inspection date, and the violations recorded that day. Search by name or ZIP, filter by score band, jump to your current location, and open an Insights panel for citywide stats and a per-ZIP breakdown of best/worst restaurants. No account required.
+Interactive web app that maps every San Francisco restaurant health inspection on a Mapbox-rendered map. Click a dot to see the latest rating (Pass / Conditional Pass / Closure), the inspection date, and the violations recorded that day. Search by name or neighborhood, filter by rating, jump to your current location, and open an Insights panel for citywide stats and a per-neighborhood breakdown. No account required.
 
-Data comes from the city's public health-inspection feed: [DataSF — Restaurant Scores (LIVES Standard)](https://data.sfgov.org/Health-and-Social-Services/Restaurant-Scores-LIVES-Standard/pyih-qa8i).
+Data comes from the city's current public health-inspection feed: [DataSF — Health Inspection Scores (2024–Present)](https://data.sfgov.org/Health-and-Social-Services/Health-Inspection-Scores-2024-Present-/tvy3-wexg).
 
 ## Screenshots
 
@@ -23,17 +23,17 @@ Click any pin to open inspection details: address, latest score, inspection date
 
 ## What's in the box
 
-- One-click circle markers colored on a **score gradient** (red → yellow → green → dark green at 100), not a single 90+ blob. Weaker scores render larger by default so they stay visible in a 90+ majority.
-- Choose which scores sit on top (reds / yellows / greens) and optionally make every dot the same size.
-- Restaurant search with instant typeahead over the loaded map. Typing a 5-digit `941xx` ZIP switches into ZIP mode and flies the map to that ZIP's centroid.
-- Click any dot for an inspection-detail popup: name, address, latest **scored** inspection, date, violations with risk tags, pin/save, **Directions** in Apple Maps or Google Maps, and **Copy link** to share that restaurant (`?r=`).
+- One-click circle markers colored by **Pass / Conditional Pass / Closure** (green / yellow / red). Closures and conditional passes render larger by default so they stay visible among a Pass majority.
+- Choose which ratings sit on top (closures / conditional / passes) and optionally make every dot the same size.
+- Restaurant search with instant typeahead over the loaded map. Typing a neighborhood name (for example `Mission` or `Tenderloin`) flies the map to that neighborhood's centroid.
+- Click any dot for an inspection-detail popup: name, address, latest **rating**, date, violations, pin/save, **Directions** in Apple Maps or Google Maps, and **Copy link** to share that restaurant (`?r=`).
 - Pin restaurants from a popup; they get a star on the map and a saved list in Insights, with one-tap directions.
 - Landmark pins (Golden Gate Bridge, Ferry Building, Oracle Park, and others) appear as you zoom in.
 - "Near Me" button uses the browser's geolocation API to recenter the map. **SF** resets to the city view.
 - Light/dark Mapbox basemap toggle (remembered with overlay, filters, and pin-stack settings). Click the brand chip to reopen the intro splash.
-- Insights side panel with citywide totals, an avg-score readout, a score-distribution mini chart, the citywide lowest-scoring list, and a per-ZIP drilldown. Click a highest/lowest restaurant to fly the map and open its inspection popup.
-- Score-band map filters (show/hide 90+, 70–89, below 70, no-score dots).
-- Pins / Heatmap / Off overlay toggle. Heatmap weights lower scores more heavily so clusters of weaker inspections stand out.
+- Insights side panel with citywide totals, a pass-rate readout, a rating-distribution mini chart, the citywide needs-attention list, and a per-neighborhood drilldown. Click a restaurant to fly the map and open its inspection popup.
+- Rating map filters (show/hide Pass, Conditional Pass, Closure, no-rating dots).
+- Pins / Heatmap / Off overlay toggle. Heatmap weights Closures and Conditional Passes more heavily so problem clusters stand out.
 
 ## Repository layout
 
@@ -167,7 +167,7 @@ A Monday GitHub Action does the same refresh and commits CSV updates when the so
 
 Geocoding rate-limits to 1 request/second per Nominatim's usage policy and caches every result in `data/processed/geocode_cache.json`. A full first-time geocode of all missing addresses takes roughly an hour; later runs only look up new addresses.
 
-The current feed (`pyih-qa8i`) is DataSF's historical LIVES numeric-score dataset (2016–2019) and is no longer receiving new inspections. The city now publishes [Health Inspection Scores (2024–Present)](https://data.sfgov.org/Health-and-Social-Services/Health-Inspection-Scores-2024-Present-/tvy3-wexg) (`tvy3-wexg`) using Pass / Conditional Pass / Closure instead of 0–100 scores. Routine refresh will follow `pyih-qa8i` if that view ever updates; switching the map to the live 2024 feed is a separate schema change.
+The current feed (`tvy3-wexg`) is DataSF's live Health Inspection Scores dataset (2024–present), using Pass / Conditional Pass / Closure. The older LIVES numeric-score view (`pyih-qa8i`, 2016–2019) is historical and is no longer used here.
 
 ## API reference
 
@@ -180,14 +180,15 @@ Liveness check. Returns `{"status": "ok"}`. Returns 503 if `safety.db` is missin
 Snapshot fingerprint for the map. Returns restaurant/inspection counts, `latest_inspection_date`, and `db_mtime` (unix timestamp of the database file). The frontend uses this to reload pins when a refresh replaces the DB.
 
 ### `GET /api/restaurants`
-Paginated, filterable list of restaurants. Each row includes the latest scored inspection (joined from a `latest_scores` table built when the database is loaded).
+Paginated, filterable list of restaurants. Each row includes the latest inspection rating (joined from a `latest_scores` table built when the database is loaded).
 
 Query params:
 - `search` or `name` — substring match on `business_name` (case-insensitive `LIKE`).
 - `postal_code` — exact match.
-- `min_score` — numeric, filters on the latest score.
+- `neighborhood` — exact match on `analysis_neighborhood`.
+- `rating` — exact match on the latest rating (`Pass`, `Conditional Pass`, or `Closure`).
 - `has_coordinates=true|false` — restrict to restaurants with or without lat/lng.
-- `view=map` — compact payload for the map (id, name, address, ZIP, coordinates, score). Skips the extra `COUNT(*)` and name sort.
+- `view=map` — compact payload for the map (id, name, address, neighborhood, coordinates, rating). Skips the extra `COUNT(*)` and name sort.
 - `include_total=true|false` — include an exact total. Defaults to false when `view=map`, true otherwise.
 - `limit` (default 50, max 500; max 10,000 when `has_coordinates=true` so the whole map can render in one fetch).
 - `offset` (default 0).
@@ -204,20 +205,20 @@ Lighter endpoint used by the map popup: restaurant identity, a compact `inspecti
 Every inspection for a restaurant, each with its violations attached. Same payload structure as the popup endpoint, but full history.
 
 ### `GET /api/stats`
-Citywide rollup: total restaurants, average latest score, and the score distribution buckets (`90_plus`, `70_to_89`, `below_70`, `no_score`).
+Citywide rollup: total restaurants, latest pass rate, and the rating distribution buckets (`pass`, `conditional`, `closure`, `no_rating`).
 
 ### `GET /api/stats/neighborhoods`
-- Without `postal_code`: returns `{ postal_codes: [...] }` of every distinct ZIP in the data.
-- With `?postal_code=941XX`: returns restaurant count, average latest score, and the top 3 / bottom 3 scoring restaurants in that ZIP (including address and coordinates so the map can fly to them). 404 if the ZIP isn't in the data.
+- Without `neighborhood`: returns `{ neighborhoods: [...] }` of every distinct analysis neighborhood in the data.
+- With `?neighborhood=Mission`: returns restaurant count, pass rate, and the top 3 / bottom 3 rated restaurants in that neighborhood (including address and coordinates so the map can fly to them). 404 if the neighborhood isn't in the data.
 
 ## Data model
 
 Three tables, all built from the DataSF feed:
 
-- **restaurants** — one row per `business_id`. Identity, address, phone, lat/lng. Lat/lng are floats and may be NULL when DataSF didn't supply them and Nominatim couldn't resolve the address.
-- **inspections** — one row per `inspection_id`, FK to `restaurants`. Has `inspection_date`, `inspection_score` (nullable; reinspections often have no score), `inspection_type`.
-- **violations** — one row per `violation_id`, FK to `inspections` and `restaurants`. Has `violation_description` and `risk_category` ("High Risk" / "Moderate Risk" / "Low Risk").
-- **latest_scores** — derived at load time: one row per restaurant with its most recent scored inspection. Map, list, and Insights queries join this instead of windowing the full inspections table on every request.
+- **restaurants** — one row per `business_id` (DPH permit number). Identity, address, neighborhood, permit type, lat/lng. Lat/lng are floats and may be NULL when DataSF didn't supply them and Nominatim couldn't resolve the address.
+- **inspections** — one row per `inspection_id`, FK to `restaurants`. Has `inspection_date`, `facility_rating_status` (`Pass` / `Conditional Pass` / `Closure`, nullable), `inspection_type`, and optional notes.
+- **violations** — one row per `violation_id`, FK to `inspections` and `restaurants`. Parsed from DataSF `violation_codes` text. `risk_category` is unused on the 2024 feed.
+- **latest_scores** — derived at load time: one row per restaurant with its most recent inspection (rating + date). Map, list, and Insights queries join this instead of windowing the full inspections table on every request.
 
 ## Security review
 

@@ -8,7 +8,7 @@ from flask_cors import CORS
 
 from .config import Config
 from .refresh_job import start_refresh_scheduler
-from .utils.db import close_db, ensure_indexes, get_db
+from .utils.db import close_db, ensure_indexes, get_db, schema_is_current
 
 
 def create_app(config_object: type = Config) -> Flask:
@@ -45,6 +45,13 @@ def create_app(config_object: type = Config) -> Flask:
         try:
             db = get_db()
             db.execute("SELECT 1").fetchone()
+            if not schema_is_current(db):
+                return {
+                    "status": "error",
+                    "error": (
+                        "database schema is stale. Run python scripts/load_db.py"
+                    ),
+                }, 503
         except sqlite3.Error as exc:
             return {"status": "error", "error": str(exc)}, 503
         return {"status": "ok"}

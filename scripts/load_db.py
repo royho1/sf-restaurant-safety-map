@@ -25,7 +25,9 @@ SCHEMA = {
             business_postal_code TEXT,
             business_phone_number TEXT,
             business_latitude REAL,
-            business_longitude REAL
+            business_longitude REAL,
+            analysis_neighborhood TEXT,
+            permit_type TEXT
         )
     """,
     "inspections": """
@@ -33,8 +35,11 @@ SCHEMA = {
             inspection_id TEXT PRIMARY KEY,
             business_id TEXT REFERENCES restaurants(business_id),
             inspection_date TEXT,
-            inspection_score INTEGER,
-            inspection_type TEXT
+            inspection_type TEXT,
+            facility_rating_status TEXT,
+            violation_count INTEGER,
+            inspection_notes TEXT,
+            suspension_notes TEXT
         )
     """,
     "violations": """
@@ -64,6 +69,10 @@ def load_restaurants() -> pd.DataFrame:
     )
     df["business_latitude"] = pd.to_numeric(df["business_latitude"], errors="coerce")
     df["business_longitude"] = pd.to_numeric(df["business_longitude"], errors="coerce")
+    if "analysis_neighborhood" not in df.columns:
+        df["analysis_neighborhood"] = pd.NA
+    if "permit_type" not in df.columns:
+        df["permit_type"] = pd.NA
     return df
 
 
@@ -75,9 +84,22 @@ def load_inspections() -> pd.DataFrame:
             "business_id": str,
             "inspection_date": str,
             "inspection_type": str,
+            "facility_rating_status": str,
+            "inspection_notes": str,
+            "suspension_notes": str,
         },
     )
-    df["inspection_score"] = pd.to_numeric(df["inspection_score"], errors="coerce").astype("Int64")
+    if "violation_count" in df.columns:
+        df["violation_count"] = pd.to_numeric(df["violation_count"], errors="coerce").astype(
+            "Int64"
+        )
+    else:
+        df["violation_count"] = pd.NA
+    if "facility_rating_status" not in df.columns:
+        df["facility_rating_status"] = pd.NA
+    for col in ("inspection_notes", "suspension_notes"):
+        if col not in df.columns:
+            df[col] = pd.NA
     return df
 
 
@@ -118,7 +140,7 @@ def main() -> None:
             conn.execute("PRAGMA foreign_keys = ON")
             cur = conn.cursor()
 
-            for table in ("violations", "inspections", "restaurants"):
+            for table in ("violations", "inspections", "restaurants", "latest_scores"):
                 print(f"Dropping table if exists: {table}", flush=True)
                 cur.execute(f"DROP TABLE IF EXISTS {table}")
 
@@ -127,9 +149,45 @@ def main() -> None:
                 cur.execute(ddl)
 
             print("Inserting rows...", flush=True)
-            restaurants.to_sql("restaurants", conn, if_exists="append", index=False)
-            inspections.to_sql("inspections", conn, if_exists="append", index=False)
-            violations.to_sql("violations", conn, if_exists="append", index=False)
+            restaurant_cols = [
+                "business_id",
+                "business_name",
+                "business_address",
+                "business_city",
+                "business_state",
+                "business_postal_code",
+                "business_phone_number",
+                "business_latitude",
+                "business_longitude",
+                "analysis_neighborhood",
+                "permit_type",
+            ]
+            inspection_cols = [
+                "inspection_id",
+                "business_id",
+                "inspection_date",
+                "inspection_type",
+                "facility_rating_status",
+                "violation_count",
+                "inspection_notes",
+                "suspension_notes",
+            ]
+            violation_cols = [
+                "violation_id",
+                "inspection_id",
+                "business_id",
+                "violation_description",
+                "risk_category",
+            ]
+            restaurants.reindex(columns=restaurant_cols).to_sql(
+                "restaurants", conn, if_exists="append", index=False
+            )
+            inspections.reindex(columns=inspection_cols).to_sql(
+                "inspections", conn, if_exists="append", index=False
+            )
+            violations.reindex(columns=violation_cols).to_sql(
+                "violations", conn, if_exists="append", index=False
+            )
 
             print("Creating indexes...", flush=True)
             cur.execute(
@@ -141,6 +199,10 @@ def main() -> None:
                 "ON restaurants (business_postal_code)"
             )
             cur.execute(
+                "CREATE INDEX IF NOT EXISTS idx_restaurants_neighborhood "
+                "ON restaurants (analysis_neighborhood)"
+            )
+            cur.execute(
                 "CREATE INDEX IF NOT EXISTS idx_violations_inspection "
                 "ON violations (inspection_id)"
             )
@@ -149,7 +211,7 @@ def main() -> None:
                 "ON violations (business_id)"
             )
 
-            print("Materializing latest scored inspections...", flush=True)
+            print("Materializing latest inspections...", flush=True)
             cur.execute("DROP TABLE IF EXISTS latest_scores")
             cur.execute(
                 """
@@ -157,35 +219,36 @@ def main() -> None:
                     business_id TEXT PRIMARY KEY,
                     inspection_id TEXT,
                     inspection_date TEXT,
-                    inspection_score INTEGER
+                    facility_rating_status TEXT
                 )
                 """
             )
             cur.execute(
                 """
                 INSERT INTO latest_scores (
-                    business_id, inspection_id, inspection_date, inspection_score
+                    business_id, inspection_id, inspection_date, facility_rating_status
                 )
-                SELECT business_id, inspection_id, inspection_date, inspection_score
+                SELECT business_id, inspection_id, inspection_date, facility_rating_status
                 FROM (
                     SELECT
                         business_id,
                         inspection_id,
                         inspection_date,
-                        inspection_score,
+                        facility_rating_status,
                         ROW_NUMBER() OVER (
                             PARTITION BY business_id
                             ORDER BY inspection_date DESC, inspection_id DESC
                         ) AS rn
                     FROM inspections
-                    WHERE inspection_score IS NOT NULL
+                    WHERE facility_rating_status IS NOT NULL
+                      AND TRIM(facility_rating_status) <> ''
                 )
                 WHERE rn = 1
                 """
             )
             cur.execute(
-                "CREATE INDEX IF NOT EXISTS idx_latest_scores_score "
-                "ON latest_scores (inspection_score)"
+                "CREATE INDEX IF NOT EXISTS idx_latest_scores_rating "
+                "ON latest_scores (facility_rating_status)"
             )
 
             conn.commit()

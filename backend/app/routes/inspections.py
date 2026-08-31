@@ -20,7 +20,8 @@ def list_for_restaurant(business_id: str):
 
     inspections = db.execute(
         """
-        SELECT inspection_id, business_id, inspection_date, inspection_score, inspection_type
+        SELECT inspection_id, business_id, inspection_date, inspection_type,
+               facility_rating_status, violation_count, inspection_notes, suspension_notes
         FROM inspections
         WHERE business_id = ?
         ORDER BY inspection_date DESC, inspection_id DESC

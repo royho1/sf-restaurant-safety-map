@@ -5,10 +5,9 @@ from pathlib import Path
 
 import requests
 
-# LIVES-standard numeric scores. DataSF now labels this view historical
-# (2016–2019); the city maintains a newer Pass/Conditional/Closure feed at
-# tvy3-wexg. Keep this ID until the app is migrated to that schema.
-DATASET_ID = "pyih-qa8i"
+# Current DPH ratings: Pass / Conditional Pass / Closure (2024–present).
+# The older LIVES numeric-score view is pyih-qa8i (2016–2019, frozen).
+DATASET_ID = "tvy3-wexg"
 API_URL = f"https://data.sfgov.org/resource/{DATASET_ID}.json"
 METADATA_URL = f"https://data.sfgov.org/api/views/{DATASET_ID}.json"
 PAGE_SIZE = 1000

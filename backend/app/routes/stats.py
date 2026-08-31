@@ -9,6 +9,15 @@ bp = Blueprint("stats", __name__, url_prefix="/api/stats")
 TOP_BOTTOM_RESTAURANTS = 3
 CITYWIDE_LOWEST_RESTAURANTS = 8
 
+RATING_RANK_SQL = """
+CASE latest.facility_rating_status
+    WHEN 'Closure' THEN 0
+    WHEN 'Conditional Pass' THEN 1
+    WHEN 'Pass' THEN 2
+    ELSE 3
+END
+"""
+
 RANKED_RESTAURANT_SELECT = """
 SELECT
     r.business_id,
@@ -19,48 +28,60 @@ SELECT
     r.business_postal_code,
     r.business_latitude,
     r.business_longitude,
-    latest.inspection_score AS latest_inspection_score
+    r.analysis_neighborhood,
+    latest.facility_rating_status AS latest_rating_status
 FROM restaurants r
 INNER JOIN latest_scores latest ON latest.business_id = r.business_id
-WHERE latest.inspection_score IS NOT NULL
+WHERE latest.facility_rating_status IS NOT NULL
+  AND TRIM(latest.facility_rating_status) <> ''
 """
 
 
 @bp.get("")
 def citywide_stats():
-    """Total restaurants, average latest inspection score, score distribution."""
+    """Total restaurants, pass rate, and Pass / Conditional / Closure counts."""
     db = get_db()
 
     row = db.execute(
         """
         SELECT
             COUNT(*) AS total_restaurants,
-            AVG(latest.inspection_score) AS avg_latest_score,
-            SUM(CASE WHEN latest.inspection_score IS NULL THEN 1 ELSE 0 END) AS no_score,
-            SUM(CASE WHEN latest.inspection_score >= 90 THEN 1 ELSE 0 END) AS score_90_plus,
+            SUM(
+                CASE WHEN latest.facility_rating_status = 'Pass' THEN 1 ELSE 0 END
+            ) AS rating_pass,
             SUM(
                 CASE
-                    WHEN latest.inspection_score >= 70 AND latest.inspection_score < 90
+                    WHEN latest.facility_rating_status = 'Conditional Pass' THEN 1
+                    ELSE 0
+                END
+            ) AS rating_conditional,
+            SUM(
+                CASE WHEN latest.facility_rating_status = 'Closure' THEN 1 ELSE 0 END
+            ) AS rating_closure,
+            SUM(
+                CASE
+                    WHEN latest.facility_rating_status IS NULL
+                      OR TRIM(latest.facility_rating_status) = ''
                     THEN 1 ELSE 0
                 END
-            ) AS score_70_to_89,
-            SUM(
-                CASE
-                    WHEN latest.inspection_score < 70 THEN 1 ELSE 0
-                END
-            ) AS score_below_70
+            ) AS no_rating
         FROM restaurants r
         LEFT JOIN latest_scores latest ON latest.business_id = r.business_id
         """
     ).fetchone()
 
-    avg = row["avg_latest_score"]
+    rated = (
+        (row["rating_pass"] or 0)
+        + (row["rating_conditional"] or 0)
+        + (row["rating_closure"] or 0)
+    )
+    pass_rate = round((row["rating_pass"] / rated) * 100, 1) if rated else None
     lowest_rows = db.execute(
         RANKED_RESTAURANT_SELECT
-        + """
+        + f"""
           AND r.business_latitude IS NOT NULL
           AND r.business_longitude IS NOT NULL
-        ORDER BY latest.inspection_score ASC, r.business_name COLLATE NOCASE
+        ORDER BY {RATING_RANK_SQL} ASC, r.business_name COLLATE NOCASE
         LIMIT ?
         """,
         (CITYWIDE_LOWEST_RESTAURANTS,),
@@ -68,12 +89,12 @@ def citywide_stats():
     return jsonify(
         {
             "total_restaurants": row["total_restaurants"],
-            "avg_latest_inspection_score": round(avg, 2) if avg is not None else None,
-            "restaurant_score_distribution": {
-                "90_plus": row["score_90_plus"],
-                "70_to_89": row["score_70_to_89"],
-                "below_70": row["score_below_70"],
-                "no_score": row["no_score"],
+            "pass_rate": pass_rate,
+            "restaurant_rating_distribution": {
+                "pass": row["rating_pass"] or 0,
+                "conditional": row["rating_conditional"] or 0,
+                "closure": row["rating_closure"] or 0,
+                "no_rating": row["no_rating"] or 0,
             },
             "lowest_restaurants": rows_to_dicts(lowest_rows),
         }
@@ -82,65 +103,81 @@ def citywide_stats():
 
 @bp.get("/neighborhoods")
 def neighborhood_stats():
-    """Without postal_code: list zips. With postal_code: detail + top/bottom restaurants."""
+    """Without neighborhood: list names. With neighborhood: detail + top/bottom."""
     db = get_db()
-    postal = (request.args.get("postal_code", type=str) or "").strip()
+    neighborhood = (
+        request.args.get("neighborhood", type=str)
+        or request.args.get("postal_code", type=str)
+        or ""
+    ).strip()
 
-    if not postal:
-        codes = db.execute(
+    if not neighborhood:
+        names = db.execute(
             """
-            SELECT DISTINCT business_postal_code AS postal_code
+            SELECT DISTINCT analysis_neighborhood AS neighborhood
             FROM restaurants
-            WHERE business_postal_code IS NOT NULL
-              AND TRIM(business_postal_code) <> ''
-            ORDER BY business_postal_code COLLATE NOCASE
+            WHERE analysis_neighborhood IS NOT NULL
+              AND TRIM(analysis_neighborhood) <> ''
+            ORDER BY analysis_neighborhood COLLATE NOCASE
             """
         ).fetchall()
-        return jsonify({"postal_codes": [r["postal_code"] for r in codes]})
+        return jsonify({"neighborhoods": [r["neighborhood"] for r in names]})
 
     exists = db.execute(
-        "SELECT 1 AS ok FROM restaurants WHERE business_postal_code = ? LIMIT 1",
-        (postal,),
+        "SELECT 1 AS ok FROM restaurants WHERE analysis_neighborhood = ? LIMIT 1",
+        (neighborhood,),
     ).fetchone()
     if not exists:
-        return jsonify({"error": "Unknown postal code"}), 404
+        return jsonify({"error": "Unknown neighborhood"}), 404
 
     summary = db.execute(
         """
         SELECT
             COUNT(*) AS restaurant_count,
-            AVG(latest.inspection_score) AS avg_latest_score
+            SUM(
+                CASE WHEN latest.facility_rating_status = 'Pass' THEN 1 ELSE 0 END
+            ) AS rating_pass,
+            SUM(
+                CASE
+                    WHEN latest.facility_rating_status IS NOT NULL
+                     AND TRIM(latest.facility_rating_status) <> ''
+                    THEN 1 ELSE 0
+                END
+            ) AS rated_count
         FROM restaurants r
         LEFT JOIN latest_scores latest ON latest.business_id = r.business_id
-        WHERE r.business_postal_code = ?
+        WHERE r.analysis_neighborhood = ?
         """,
-        (postal,),
+        (neighborhood,),
     ).fetchone()
 
     ranked_select = (
         RANKED_RESTAURANT_SELECT
         + """
-        AND r.business_postal_code = ?
+        AND r.analysis_neighborhood = ?
         """
     )
-    top_sql = ranked_select + """
-        ORDER BY latest.inspection_score DESC, r.business_name COLLATE NOCASE
+    top_sql = ranked_select + f"""
+        ORDER BY {RATING_RANK_SQL} DESC, r.business_name COLLATE NOCASE
         LIMIT ?
     """
-    bottom_sql = ranked_select + """
-        ORDER BY latest.inspection_score ASC, r.business_name COLLATE NOCASE
+    bottom_sql = ranked_select + f"""
+        ORDER BY {RATING_RANK_SQL} ASC, r.business_name COLLATE NOCASE
         LIMIT ?
     """
 
-    top_rows = db.execute(top_sql, (postal, TOP_BOTTOM_RESTAURANTS)).fetchall()
-    bottom_rows = db.execute(bottom_sql, (postal, TOP_BOTTOM_RESTAURANTS)).fetchall()
+    top_rows = db.execute(top_sql, (neighborhood, TOP_BOTTOM_RESTAURANTS)).fetchall()
+    bottom_rows = db.execute(bottom_sql, (neighborhood, TOP_BOTTOM_RESTAURANTS)).fetchall()
 
-    avg_s = summary["avg_latest_score"]
+    rated = summary["rated_count"] or 0
+    pass_rate = (
+        round((summary["rating_pass"] / rated) * 100, 1) if rated else None
+    )
     return jsonify(
         {
-            "postal_code": postal,
+            "neighborhood": neighborhood,
             "restaurant_count": summary["restaurant_count"],
-            "avg_latest_inspection_score": round(avg_s, 2) if avg_s is not None else None,
+            "pass_rate": pass_rate,
             "top_restaurants": rows_to_dicts(top_rows),
             "bottom_restaurants": rows_to_dicts(bottom_rows),
         }

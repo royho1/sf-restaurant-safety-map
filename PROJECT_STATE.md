@@ -36,12 +36,12 @@ Durable agent memory for this repository. Not a README. Capture only what future
 - **Mapbox token is public by design.** `VITE_MAPBOX_TOKEN` is bundled into client JS. Restrict it by URL in the Mapbox dashboard rather than treating it as a server secret.
 - **Weaker scores are drawn larger.** Default marker sizing is intentional so a Pass majority does not hide low scores. Heatmap also weights lower scores more heavily.
 - **Data validation.** `python scripts/validate_data.py` checks row counts, coordinate coverage, and inspection freshness. CI runs it after weekly refresh.
-- **Refresh status file.** `data/processed/last_refresh.json` is written by `refresh_data.py` and exposed via `/api/meta`.
+- **Refresh status file.** `data/processed/last_refresh.json` is gitignored runtime telemetry written by `refresh_data.py` and exposed via `/api/meta` on machines that run refresh.
 
 ## Decisions
 
 - **SQLite snapshot, not live DataSF at request time.** The API reads `safety.db`. Refresh is fetch → clean → load (`scripts/refresh_data.py`), with a 24h background check (`DATA_REFRESH_HOURS`) and a Monday GitHub Action.
-- **Geocode split across schedules.** Weekly fetch skips Nominatim; monthly workflow backfills coordinates. Background job uses `DATA_REFRESH_MAX_GEOCODES` (default 30).
+- **Geocode split across schedules.** Weekly fetch skips Nominatim network calls but still applies `geocode_cache.json`. Monthly workflow backfills new addresses. Background job uses `DATA_REFRESH_MAX_GEOCODES` (default 30) and only auto-runs when actionable backlog exists (uncached addresses, not confirmed Nominatim misses).
 - **No auth.** Read-only public-data viewer. Add auth before any write endpoints.
 
 ## Do not store

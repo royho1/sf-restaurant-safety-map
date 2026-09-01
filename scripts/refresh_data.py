@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fetch_data import fetch_source_revision
+from clean_data import GEOCODE_CACHE_PATH, _build_query, _load_geocode_cache
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = Path(__file__).resolve().parent
@@ -73,6 +74,27 @@ def _count_missing_coordinates() -> int:
             ) or not _has_valid_coordinate(row.get("business_longitude")):
                 missing += 1
     return missing
+
+
+def _count_actionable_missing_coordinates() -> int:
+    """Restaurants that could still gain coordinates from cache or Nominatim."""
+    if not RESTAURANTS_CSV.is_file():
+        return 0
+    cache = _load_geocode_cache(GEOCODE_CACHE_PATH)
+    actionable = 0
+    with RESTAURANTS_CSV.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            if _has_valid_coordinate(row.get("business_latitude")) and _has_valid_coordinate(
+                row.get("business_longitude")
+            ):
+                continue
+            query = _build_query(row.get("business_address"))
+            if query is None:
+                continue
+            if query in cache and cache[query] is None:
+                continue
+            actionable += 1
+    return actionable
 
 
 def _write_last_refresh(
@@ -186,7 +208,7 @@ def main() -> None:
     )
 
     if not args.force and not source_changed:
-        missing_coords = _count_missing_coordinates()
+        actionable_coords = _count_actionable_missing_coordinates()
         print("No new rows published. Skipping fetch.", flush=True)
         if not DB_PATH.is_file():
             print("Database missing; loading from existing CSVs.", flush=True)
@@ -197,9 +219,9 @@ def main() -> None:
                 source_changed=False,
             )
             return
-        if missing_coords > 0 and not args.skip_geocode:
+        if actionable_coords > 0 and not args.skip_geocode:
             print(
-                f"{missing_coords:,} restaurant(s) missing coordinates; "
+                f"{actionable_coords:,} restaurant(s) with actionable geocode backlog; "
                 "running geocode pass.",
                 flush=True,
             )
@@ -207,7 +229,9 @@ def main() -> None:
                 _run_geocode_pass(args)
                 _write_last_refresh(
                     status="success",
-                    message=f"geocode backlog pass ({missing_coords} missing before run)",
+                    message=(
+                        f"geocode backlog pass ({actionable_coords} actionable before run)"
+                    ),
                     source_changed=False,
                     geocode_pass=True,
                 )
@@ -220,11 +244,7 @@ def main() -> None:
                 )
                 raise
             return
-        _write_last_refresh(
-            status="skipped",
-            message="source unchanged; no geocode backlog",
-            source_changed=False,
-        )
+        print("No actionable geocode backlog.", flush=True)
         return
 
     try:

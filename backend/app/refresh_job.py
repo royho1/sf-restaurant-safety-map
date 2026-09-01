@@ -31,7 +31,7 @@ def _run_refresh() -> None:
     if not REFRESH_SCRIPT.is_file():
         logger.warning("data refresh skipped: %s is missing", REFRESH_SCRIPT)
         return
-    max_geocodes = int(Config.DATA_REFRESH_MAX_GEOCODES or 30)
+    max_geocodes = int(Config.DATA_REFRESH_MAX_GEOCODES)
     cmd = [
         sys.executable,
         str(REFRESH_SCRIPT),

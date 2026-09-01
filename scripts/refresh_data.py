@@ -210,15 +210,11 @@ def main() -> None:
     if not args.force and not source_changed:
         actionable_coords = _count_actionable_missing_coordinates()
         print("No new rows published. Skipping fetch.", flush=True)
+        loaded_db = False
         if not DB_PATH.is_file():
             print("Database missing; loading from existing CSVs.", flush=True)
             _run("load_db.py")
-            _write_last_refresh(
-                status="success",
-                message="loaded database from existing CSVs",
-                source_changed=False,
-            )
-            return
+            loaded_db = True
         if actionable_coords > 0 and not args.skip_geocode:
             print(
                 f"{actionable_coords:,} restaurant(s) with actionable geocode backlog; "
@@ -243,6 +239,13 @@ def main() -> None:
                     geocode_pass=True,
                 )
                 raise
+            return
+        if loaded_db:
+            _write_last_refresh(
+                status="success",
+                message="loaded database from existing CSVs",
+                source_changed=False,
+            )
             return
         print("No actionable geocode backlog.", flush=True)
         return

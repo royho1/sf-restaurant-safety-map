@@ -1,12 +1,13 @@
-name: Refresh inspection data
+name: Geocode coordinate backlog
 
 on:
   schedule:
-    - cron: "0 15 * * 1"
+  # First Monday of each month at 16:00 UTC
+    - cron: "0 16 1-7 * 1"
   workflow_dispatch:
 
 jobs:
-  refresh:
+  geocode:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -17,8 +18,8 @@ jobs:
           python-version: "3.12"
       - name: Install pipeline deps
         run: pip install -r scripts/requirements.txt
-      - name: Refresh from DataSF
-        run: python scripts/refresh_data.py --skip-geocode
+      - name: Backfill missing coordinates
+        run: python scripts/refresh_data.py --geocode-only --max-geocodes 500
       - name: Validate processed data
         run: python scripts/validate_data.py --json
       - name: Commit snapshot if it changed
@@ -30,5 +31,5 @@ jobs:
             echo "No data changes"
             exit 0
           fi
-          git commit -m "Refresh inspection snapshot from DataSF"
+          git commit -m "Backfill restaurant coordinates from geocode pass"
           git push

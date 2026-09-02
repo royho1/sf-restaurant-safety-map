@@ -1,0 +1,37 @@
+# Run both containers on one private network.
+#   export VITE_MAPBOX_TOKEN=pk....   # or put it in a gitignored root .env
+#   docker compose up --build
+#
+# Browser: http://localhost:8080
+# API direct (debug): http://localhost:5001/api/health
+
+services:
+  api:
+    build:
+      # Repo root so backend/Dockerfile can COPY scripts/ + backend/
+      context: .
+      dockerfile: backend/Dockerfile
+    # Publish host:container — EXPOSE alone does not do this.
+    ports:
+      - "5001:5001"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "5001"
+      DATA_REFRESH_HOURS: "0"
+    # No volume yet (Step 4). safety.db is not in the image (.dockerignore),
+    # so /api/health will 503 until we mount the DB.
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # Vite bakes this in at image-build time (see frontend/Dockerfile).
+        # Compose reads VITE_MAPBOX_TOKEN from your shell or a root .env file.
+        VITE_MAPBOX_TOKEN: ${VITE_MAPBOX_TOKEN:?Set VITE_MAPBOX_TOKEN in the environment or a root .env}
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    # Browser → localhost:8080/api → nginx in `web` → http://api:5001
+    # Compose DNS makes hostname `api` resolve to the api container.

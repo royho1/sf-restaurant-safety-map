@@ -1,0 +1,54 @@
+# Run both containers on one private network.
+#   export VITE_MAPBOX_TOKEN=pk....   # or put it in a gitignored root .env
+#   docker compose up --build
+#
+# Browser: http://localhost:8080
+# API direct (debug): http://localhost:5001/api/health
+#
+# --- Step 4: SQLite persistence ---
+# WITHOUT the volumes block below:
+#   1. safety.db is not in the image (.dockerignore)
+#   2. /api/health → 503
+#   3. If you docker-cp a DB into the running container, health goes ok —
+#      but `docker compose down` + `up` creates a *new* container filesystem
+#      and that copied file is gone → 503 again.
+# WITH the bind mount:
+#   the file lives on the host at ./backend/db/; containers just see it.
+
+services:
+  api:
+    build:
+      # Repo root so backend/Dockerfile can COPY scripts/ + backend/
+      context: .
+      dockerfile: backend/Dockerfile
+    # Publish host:container — EXPOSE alone does not do this.
+    ports:
+      - "5001:5001"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "5001"
+      DATA_REFRESH_HOURS: "0"
+      # Default path inside the container matches Config.DATABASE_PATH.
+      # Override with SAFETY_DB_PATH if you mount the file somewhere else.
+    volumes:
+      # Bind mount (host path → container path). Tradeoff vs a named volume:
+      #   bind: easy to inspect/edit ./backend/db/safety.db on your Mac; ties
+      #         the stack to this checkout path.
+      #   named: portable across hosts, but starts empty — you'd still need to
+      #          seed safety.db once (docker cp / load_db) before health is ok.
+      - ./backend/db:/app/backend/db
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # Vite bakes this in at image-build time (see frontend/Dockerfile).
+        # Compose reads VITE_MAPBOX_TOKEN from your shell or a root .env file.
+        VITE_MAPBOX_TOKEN: ${VITE_MAPBOX_TOKEN:?Set VITE_MAPBOX_TOKEN in the environment or a root .env}
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    # Browser → localhost:8080/api → nginx in `web` → http://api:5001
+    # Compose DNS makes hostname `api` resolve to the api container.

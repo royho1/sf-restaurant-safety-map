@@ -1,0 +1,29 @@
+# Sent to the daemon as the build context. Smaller context = faster uploads
+# and fewer accidental secret/code leaks into image layers.
+
+.git
+.github
+.cursor
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.venv
+**/venv
+node_modules
+frontend/node_modules
+frontend/dist
+*.md
+!README.md
+
+# Local env / tokens must never be baked into an image layer.
+.env
+**/.env
+frontend/.env
+
+# DB is runtime data (Step 4 volume). Keep it out of the image so rebuilds
+# don't silently ship a stale snapshot, and so we can demo "data gone".
+backend/db/safety.db
+backend/db/*.db
+
+# Raw downloads stay out of the image; committed processed/ seeds refresh.
+data/raw

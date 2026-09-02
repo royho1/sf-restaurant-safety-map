@@ -16,8 +16,7 @@ ENV PYTHONUNBUFFERED=1
 # 0.0.0.0 accepts connections from other containers / published host ports.
 ENV HOST=0.0.0.0
 ENV PORT=5001
-# Keep the optional DataSF background refresh off unless you opt in.
-# (Refresh needs scripts/ + network; API serving does not.)
+# Refresh is off by default; set DATA_REFRESH_HOURS>0 to enable (needs network).
 ENV DATA_REFRESH_HOURS=0
 
 # --- Dependency layer (cached until requirements*.txt change) ---
@@ -29,8 +28,11 @@ COPY backend/requirements.txt /app/backend/requirements.txt
 COPY scripts/requirements.txt /app/scripts/requirements.txt
 RUN pip install --no-cache-dir -r /app/backend/requirements.txt
 
-# --- Application layer (invalidates on any backend code change) ---
+# --- Application layer (invalidates on any backend/scripts code change) ---
 COPY backend/ /app/backend/
+# refresh_job.py shells out to scripts/refresh_data.py when DATA_REFRESH_HOURS>0.
+# Without this COPY, enabling refresh would silently no-op ("script missing").
+COPY scripts/ /app/scripts/
 
 WORKDIR /app/backend
 

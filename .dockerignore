@@ -25,6 +25,5 @@ frontend/.env
 backend/db/safety.db
 backend/db/*.db
 
-# Large / regenerable data that the API container does not need to serve.
+# Raw downloads stay out of the image; committed processed/ seeds refresh.
 data/raw
-data/processed/geocode_cache.json

@@ -28,11 +28,14 @@ COPY backend/requirements.txt /app/backend/requirements.txt
 COPY scripts/requirements.txt /app/scripts/requirements.txt
 RUN pip install --no-cache-dir -r /app/backend/requirements.txt
 
-# --- Application layer (invalidates on any backend/scripts code change) ---
+# --- Application layer (invalidates on any backend/scripts/data change) ---
 COPY backend/ /app/backend/
 # refresh_job.py shells out to scripts/refresh_data.py when DATA_REFRESH_HOURS>0.
 # Without this COPY, enabling refresh would silently no-op ("script missing").
 COPY scripts/ /app/scripts/
+# Seed revision stamp + CSVs + geocode_cache so an opted-in refresh does not
+# treat every new container as "no prior stamp" or burn the 30-geocode cap cold.
+COPY data/processed/ /app/data/processed/
 
 WORKDIR /app/backend
 

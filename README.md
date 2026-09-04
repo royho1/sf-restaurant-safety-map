@@ -1,6 +1,6 @@
 # SF Restaurant Safety Map
 
-Interactive web app that maps every San Francisco restaurant health inspection on a Mapbox-rendered map. Click a dot to see the latest rating (Pass / Conditional Pass / Closure), the inspection date, and the violations recorded that day. Search by name or neighborhood, filter by rating, jump to your current location, and open an Insights panel for citywide stats and a per-neighborhood breakdown. No account required.
+Interactive web app that maps every San Francisco restaurant health inspection on a Mapbox-rendered map. Click a dot to see the latest rating (Pass / Conditional Pass / Closure), the inspection date, and the violations recorded that day. Search by name or neighborhood, filter by rating, jump to your current location, and open an Insights panel for citywide stats and a per-neighborhood breakdown. Also no account required.
 
 Data comes from the city's current public health-inspection feed: [DataSF — Health Inspection Scores (2024–Present)](https://data.sfgov.org/Health-and-Social-Services/Health-Inspection-Scores-2024-Present-/tvy3-wexg).
 

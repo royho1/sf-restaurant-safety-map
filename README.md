@@ -10,21 +10,21 @@ Map view with score-colored pins and legend (thousands of restaurants across the
 
 ![San Francisco map with restaurant inspection score pins](docs/screenshots/map.png)
 
+Dark mode basemap.
+
+![Map in dark mode](docs/screenshots/dark-mode.png)
+
 Click any pin to open inspection details: address, latest rating, inspection date, and violations.
 
 ![Inspection detail popup for a restaurant](docs/screenshots/detail-popup.png)
-
-Insights panel with citywide stats, rating distribution, and neighborhood drilldown.
-
-![Insights side panel](docs/screenshots/insights-panel.png)
 
 Map filters and overlay controls (pins, heatmap, rating visibility).
 
 ![Map filters and overlay controls](docs/screenshots/map-filters.png)
 
-Dark mode basemap.
+Insights panel with citywide stats, rating distribution, and neighborhood drilldown.
 
-![Map in dark mode](docs/screenshots/dark-mode.png)
+![Insights side panel](docs/screenshots/insights-panel.png)
 
 ## Tech stack
 

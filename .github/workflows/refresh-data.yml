@@ -19,11 +19,13 @@ jobs:
         run: pip install -r scripts/requirements.txt
       - name: Refresh from DataSF
         run: python scripts/refresh_data.py --skip-geocode
+      - name: Validate processed data
+        run: python scripts/validate_data.py --json
       - name: Commit snapshot if it changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/processed
+          git add data/processed/*.csv data/processed/source_revision.json data/processed/geocode_cache.json
           if git diff --staged --quiet; then
             echo "No data changes"
             exit 0

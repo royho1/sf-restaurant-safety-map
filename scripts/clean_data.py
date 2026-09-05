@@ -345,6 +345,43 @@ def _save_geocode_cache(path: Path, cache: dict[str, dict | None]) -> None:
     tmp.replace(path)
 
 
+def apply_geocode_cache(
+    restaurants: pd.DataFrame,
+    cache_path: Path = GEOCODE_CACHE_PATH,
+) -> pd.DataFrame:
+    """Fill coordinates from ``geocode_cache.json`` without network calls."""
+    restaurants = restaurants.copy()
+    restaurants["business_latitude"] = pd.to_numeric(
+        restaurants["business_latitude"], errors="coerce"
+    )
+    restaurants["business_longitude"] = pd.to_numeric(
+        restaurants["business_longitude"], errors="coerce"
+    )
+
+    missing_mask = restaurants["business_latitude"].isna() | restaurants["business_longitude"].isna()
+    if not missing_mask.any():
+        return restaurants
+
+    cache = _load_geocode_cache(cache_path)
+    applied = 0
+    for row_idx in restaurants.index[missing_mask]:
+        query = _build_query(restaurants.at[row_idx, "business_address"])
+        if query is None:
+            continue
+        cached = cache.get(query)
+        if cached is None:
+            continue
+        restaurants.at[row_idx, "business_latitude"] = cached["lat"]
+        restaurants.at[row_idx, "business_longitude"] = cached["lon"]
+        applied += 1
+
+    print(
+        f"Applied {applied:,} cached coordinate(s) from {cache_path.name}.",
+        flush=True,
+    )
+    return restaurants
+
+
 def geocode_missing_coordinates(
     restaurants: pd.DataFrame,
     *,
@@ -517,7 +554,11 @@ def main() -> None:
     violations = build_violations(df)
 
     if args.skip_geocode:
-        print("Skipping geocoding step (--skip-geocode).", flush=True)
+        print(
+            "Skipping Nominatim network calls (--skip-geocode); applying cache.",
+            flush=True,
+        )
+        restaurants = apply_geocode_cache(restaurants)
     else:
         restaurants = geocode_missing_coordinates(
             restaurants,

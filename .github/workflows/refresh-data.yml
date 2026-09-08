@@ -21,8 +21,8 @@ jobs:
         run: python scripts/refresh_data.py --skip-geocode
       - name: Commit snapshot if it changed
         run: |
-          git config user.name "Roy Ho"
-          git config user.email "137747929+royho1@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/processed
           if git diff --staged --quiet; then
             echo "No data changes"

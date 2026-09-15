@@ -31,11 +31,12 @@ def _run_refresh() -> None:
     if not REFRESH_SCRIPT.is_file():
         logger.warning("data refresh skipped: %s is missing", REFRESH_SCRIPT)
         return
+    max_geocodes = int(Config.DATA_REFRESH_MAX_GEOCODES)
     cmd = [
         sys.executable,
         str(REFRESH_SCRIPT),
         "--max-geocodes",
-        "30",
+        str(max_geocodes),
     ]
     logger.info("starting DataSF refresh: %s", " ".join(cmd))
     result = subprocess.run(

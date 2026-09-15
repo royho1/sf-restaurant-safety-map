@@ -11,6 +11,18 @@ from .refresh_job import start_refresh_scheduler
 from .utils.db import close_db, ensure_indexes, get_db, schema_is_current
 
 
+def _load_json_file(path: Path) -> dict | None:
+    if not path.is_file():
+        return None
+    try:
+        import json
+
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
 def create_app(config_object: type = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_object)
@@ -71,17 +83,34 @@ def create_app(config_object: type = Config) -> Flask:
                 SELECT
                     (SELECT COUNT(*) FROM restaurants) AS restaurant_count,
                     (SELECT COUNT(*) FROM inspections) AS inspection_count,
-                    (SELECT MAX(inspection_date) FROM inspections) AS latest_inspection_date
+                    (SELECT MAX(inspection_date) FROM inspections) AS latest_inspection_date,
+                    (
+                        SELECT COUNT(*)
+                        FROM restaurants
+                        WHERE business_latitude IS NOT NULL
+                          AND business_longitude IS NOT NULL
+                    ) AS restaurants_with_coordinates
                 """
             ).fetchone()
         except sqlite3.Error as exc:
             return {"status": "error", "error": str(exc)}, 503
+
+        processed_dir = Config.PROJECT_ROOT / "data" / "processed"
+        source_revision = _load_json_file(processed_dir / "source_revision.json")
+        last_refresh = _load_json_file(processed_dir / "last_refresh.json")
+        restaurant_count = counts["restaurant_count"]
+        with_coordinates = counts["restaurants_with_coordinates"]
+
         return {
             "status": "ok",
-            "restaurant_count": counts["restaurant_count"],
+            "restaurant_count": restaurant_count,
             "inspection_count": counts["inspection_count"],
             "latest_inspection_date": counts["latest_inspection_date"],
+            "restaurants_with_coordinates": with_coordinates,
+            "restaurants_missing_coordinates": restaurant_count - with_coordinates,
             "db_mtime": int(path.stat().st_mtime),
+            "source_revision": source_revision,
+            "last_refresh": last_refresh,
         }
 
     start_refresh_scheduler(app)

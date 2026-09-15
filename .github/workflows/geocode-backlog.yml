@@ -1,0 +1,55 @@
+name: Geocode coordinate backlog
+
+on:
+  schedule:
+    # Every Monday at 16:00 UTC; a guard step limits this to the first Monday.
+    - cron: "0 16 * * 1"
+  workflow_dispatch:
+
+jobs:
+  geocode:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check first Monday of month
+        id: schedule
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          DOW=$(date -u +%u)
+          DOM=$(date -u +%-d)
+          if [ "$DOW" = "1" ] && [ "$DOM" -le 7 ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Not the first Monday of the month; skipping."
+          fi
+      - uses: actions/setup-python@v5
+        if: steps.schedule.outputs.run == 'true'
+        with:
+          python-version: "3.12"
+      - name: Install pipeline deps
+        if: steps.schedule.outputs.run == 'true'
+        run: pip install -r scripts/requirements.txt
+      - name: Backfill missing coordinates
+        if: steps.schedule.outputs.run == 'true'
+        run: python scripts/refresh_data.py --geocode-only --max-geocodes 500
+      - name: Validate processed data
+        if: steps.schedule.outputs.run == 'true'
+        run: python scripts/validate_data.py --json
+      - name: Commit snapshot if it changed
+        if: steps.schedule.outputs.run == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/processed/*.csv data/processed/source_revision.json data/processed/geocode_cache.json
+          if git diff --staged --quiet; then
+            echo "No data changes"
+            exit 0
+          fi
+          git commit -m "Backfill restaurant coordinates from geocode pass"
+          git push

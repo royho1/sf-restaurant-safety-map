@@ -22,6 +22,9 @@ Newest first.
 - Popup detail comes from `GET /api/restaurants/:id/inspections`. History list items are a slim subset of inspection fields; anything shown there must be included in that payload’s `inspections` array.
 - `backend/db/*.db` is gitignored; processed CSVs under `data/processed/` are committed. Stale local DBs fail health until reload.
 - Unset `CORS_ORIGINS` allows any origin (dev-friendly). Flask `run.py` defaults to `debug=True`. Before any public host: lock CORS, `--no-debug` / gunicorn, Mapbox URL restrictions.
+- Compose publishes API on host `:5001` as well as via nginx `/api/`. For production, avoid exposing `:5001` publicly so clients cannot bypass the web tier.
+- `frontend/nginx.conf` has no CSP / X-Frame-Options / X-Content-Type-Options yet; add at nginx or CDN before public launch.
+- Map list endpoint allows up to 10,000 geocoded restaurants per request (`MAX_LIMIT_HAS_COORDINATES`); fine for the map, but plan CDN/cache or proxy rate limits if the API is internet-facing.
 
 ## Decisions
 

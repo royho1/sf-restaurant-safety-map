@@ -39,7 +39,8 @@ SCHEMA = {
             facility_rating_status TEXT,
             violation_count INTEGER,
             inspection_notes TEXT,
-            suspension_notes TEXT
+            suspension_notes TEXT,
+            inspector TEXT
         )
     """,
     "violations": """
@@ -87,6 +88,7 @@ def load_inspections() -> pd.DataFrame:
             "facility_rating_status": str,
             "inspection_notes": str,
             "suspension_notes": str,
+            "inspector": str,
         },
     )
     if "violation_count" in df.columns:
@@ -97,7 +99,7 @@ def load_inspections() -> pd.DataFrame:
         df["violation_count"] = pd.NA
     if "facility_rating_status" not in df.columns:
         df["facility_rating_status"] = pd.NA
-    for col in ("inspection_notes", "suspension_notes"):
+    for col in ("inspection_notes", "suspension_notes", "inspector"):
         if col not in df.columns:
             df[col] = pd.NA
     return df
@@ -171,6 +173,7 @@ def main() -> None:
                 "violation_count",
                 "inspection_notes",
                 "suspension_notes",
+                "inspector",
             ]
             violation_cols = [
                 "violation_id",

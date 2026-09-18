@@ -169,7 +169,8 @@ def get_restaurant_inspections(business_id: str):
             facility_rating_status,
             violation_count,
             inspection_notes,
-            suspension_notes
+            suspension_notes,
+            inspector
         FROM inspections
         WHERE business_id = ?
         ORDER BY inspection_date DESC, inspection_id DESC
@@ -185,6 +186,7 @@ def get_restaurant_inspections(business_id: str):
             "inspection_type": row["inspection_type"],
             "facility_rating_status": row["facility_rating_status"],
             "violation_count": row["violation_count"],
+            "inspector": row["inspector"],
         }
         for row in inspections
     ]
@@ -241,7 +243,7 @@ def get_restaurant(business_id: str):
     inspections = db.execute(
         """
         SELECT inspection_id, inspection_date, inspection_type, facility_rating_status,
-               violation_count, inspection_notes, suspension_notes
+               violation_count, inspection_notes, suspension_notes, inspector
         FROM inspections
         WHERE business_id = ?
         ORDER BY inspection_date DESC, inspection_id DESC

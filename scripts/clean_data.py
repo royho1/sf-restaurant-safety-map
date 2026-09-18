@@ -49,6 +49,7 @@ INSPECTION_COLS = [
     "violation_count",
     "inspection_notes",
     "suspension_notes",
+    "inspector",
 ]
 
 VIOLATION_COLS = [
@@ -207,6 +208,7 @@ def map_source_columns(df: pd.DataFrame) -> pd.DataFrame:
     out["suspension_notes"] = df.get("suspension_notes", pd.Series(index=df.index)).map(
         _blank_to_na
     )
+    out["inspector"] = df.get("inspector", pd.Series(index=df.index)).map(_blank_to_na)
     out["violation_codes"] = df.get("violation_codes", pd.Series(index=df.index)).map(
         _blank_to_na
     )

@@ -84,6 +84,7 @@ def schema_is_current(conn: sqlite3.Connection) -> bool:
     return (
         "analysis_neighborhood" in restaurants
         and "facility_rating_status" in inspections
+        and "inspector" in inspections
     )
 
 

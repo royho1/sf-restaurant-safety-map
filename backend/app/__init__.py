@@ -8,7 +8,13 @@ from flask_cors import CORS
 
 from .config import Config
 from .refresh_job import start_refresh_scheduler
-from .utils.db import close_db, ensure_indexes, get_db, schema_is_current
+from .utils.db import (
+    close_db,
+    ensure_current_database,
+    ensure_indexes,
+    get_db,
+    schema_is_current,
+)
 
 
 def create_app(config_object: type = Config) -> Flask:
@@ -32,6 +38,7 @@ def create_app(config_object: type = Config) -> Flask:
     app.teardown_appcontext(close_db)
 
     with app.app_context():
+        ensure_current_database()
         ensure_indexes()
 
     @app.get("/api/health")

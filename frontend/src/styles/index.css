@@ -1959,8 +1959,9 @@ body,
 
 .popup-history-list li {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px 8px;
   padding: 5px 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
@@ -1970,6 +1971,12 @@ body,
 }
 
 .popup-history-date {
+  color: #64748b;
+}
+
+.popup-history-inspector {
+  flex: 1 1 100%;
+  font-size: 12px;
   color: #64748b;
 }
 
@@ -2104,6 +2111,10 @@ body,
 }
 
 .restaurant-popup--dark .popup-history-date {
+  color: var(--ui-text-muted);
+}
+
+.restaurant-popup--dark .popup-history-inspector {
   color: var(--ui-text-muted);
 }
 

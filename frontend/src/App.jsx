@@ -1291,6 +1291,7 @@ function App() {
           null,
         date: rated?.inspection_date ?? latest?.inspection_date ?? null,
         inspectionType: rated?.inspection_type ?? latest?.inspection_type ?? null,
+        inspector: rated?.inspector ?? latest?.inspector ?? null,
         permitType: data.permit_type || fallback?.permit_type || null,
         notes:
           rated?.inspection_notes ||
@@ -1908,6 +1909,12 @@ function App() {
                         <dt>Inspection date</dt>
                         <dd>{formatInspectionDate(popup.date)}</dd>
                       </div>
+                      {popup.inspector && (
+                        <div>
+                          <dt>Inspector</dt>
+                          <dd>{popup.inspector}</dd>
+                        </div>
+                      )}
                     </dl>
                     {popup.inspectionType && (
                       <p className="popup-type">{popup.inspectionType}</p>
@@ -1972,6 +1979,11 @@ function App() {
                               <span className={ratingClassName(insp.facility_rating_status)}>
                                 {normalizeRating(insp.facility_rating_status) || '—'}
                               </span>
+                              {insp.inspector && (
+                                <span className="popup-history-inspector">
+                                  {insp.inspector}
+                                </span>
+                              )}
                             </li>
                           ))}
                         </ol>

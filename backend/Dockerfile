@@ -41,7 +41,8 @@ WORKDIR /app/backend
 
 # EXPOSE is documentation + default for `docker run -P`. It does NOT open a
 # host port by itself. Publishing is `docker run -p 5001:5001` (or compose ports).
+# Prefer leaving the API unpublished on the host and proxying via the web tier.
 EXPOSE 5001
 
-# --no-debug: no reloader, no interactive debugger in a container.
-CMD ["python", "run.py", "--no-debug"]
+# Production WSGI server (debug is never enabled here).
+CMD ["gunicorn", "-b", "0.0.0.0:5001", "-w", "2", "--timeout", "60", "run:app"]

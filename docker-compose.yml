@@ -3,7 +3,8 @@
 #   docker compose up --build
 #
 # Browser: http://localhost:8080
-# API direct (debug): http://localhost:5001/api/health
+# API is internal-only (reached via nginx /api/ on the web container).
+# Do not publish host:5001 on internet-facing hosts.
 #
 # --- Step 4: SQLite persistence ---
 # WITHOUT the volumes block below:
@@ -21,9 +22,10 @@ services:
       # Repo root so backend/Dockerfile can COPY scripts/ + backend/
       context: .
       dockerfile: backend/Dockerfile
-    # Publish host:container — EXPOSE alone does not do this.
-    ports:
-      - "5001:5001"
+    # API stays on the Compose network only. Browser traffic goes
+    # localhost:8080/api → nginx in `web` → http://api:5001.
+    expose:
+      - "5001"
     environment:
       HOST: "0.0.0.0"
       PORT: "5001"

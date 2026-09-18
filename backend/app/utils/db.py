@@ -142,5 +142,81 @@ def close_db(_exc: BaseException | None = None) -> None:
         db.close()
 
 
+def rebuild_database_from_csvs(db_path: Path | None = None) -> bool:
+    """Atomically rebuild safety.db from processed CSVs when schema is stale.
+
+    Returns True when a rebuild ran successfully. Uses ``scripts/load_db.py``
+    so the same write-temp-then-replace path as the offline pipeline.
+    """
+    import csv
+    import subprocess
+    import sys
+
+    from ..config import Config
+
+    path = Path(db_path) if db_path is not None else _db_path()
+    project_root = Config.PROJECT_ROOT
+    script = project_root / "scripts" / "load_db.py"
+    if not script.is_file():
+        logger.warning("cannot rebuild database: %s missing", script)
+        return False
+
+    inspections_csv = project_root / "data" / "processed" / "inspections.csv"
+    if not inspections_csv.is_file():
+        logger.warning("cannot rebuild database: %s missing", inspections_csv)
+        return False
+
+    try:
+        with inspections_csv.open(newline="", encoding="utf-8") as handle:
+            header = next(csv.reader(handle), [])
+    except OSError as exc:
+        logger.warning("cannot read %s (%s)", inspections_csv, exc)
+        return False
+    if "inspector" not in {name.strip() for name in header}:
+        logger.warning(
+            "cannot rebuild database: %s is missing the inspector column; "
+            "run python scripts/refresh_data.py --force",
+            inspections_csv,
+        )
+        return False
+
+    logger.warning(
+        "database schema is stale at %s; rebuilding from processed CSVs", path
+    )
+    import os
+
+    env = os.environ.copy()
+    env["SAFETY_DB_PATH"] = str(path)
+    result = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=project_root,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    if result.returncode != 0:
+        tail = (result.stderr or result.stdout or "").strip()[-2000:]
+        logger.error("database rebuild failed (%s): %s", result.returncode, tail)
+        return False
+    logger.info("database rebuild finished")
+    return True
+
+
+def ensure_current_database(db_path: Path | None = None) -> None:
+    """Rebuild from CSVs on startup when the on-disk schema is behind the app."""
+    path = Path(db_path) if db_path is not None else _db_path()
+    if not path.is_file():
+        return
+    try:
+        with sqlite3.connect(path) as conn:
+            if schema_is_current(conn):
+                return
+    except sqlite3.Error as exc:
+        logger.warning("could not inspect database schema (%s)", exc)
+        return
+    rebuild_database_from_csvs(path)
+
+
 def rows_to_dicts(rows) -> list[dict]:
     return [dict(row) for row in rows]

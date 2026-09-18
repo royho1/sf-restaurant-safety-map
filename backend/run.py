@@ -1,4 +1,8 @@
-"""Dev entry point for the Flask API."""
+"""Dev entry point for the Flask API.
+
+Debug is opt-in. For production, prefer gunicorn (see backend/Dockerfile):
+  gunicorn -b 0.0.0.0:5001 -w 2 --timeout 60 'run:app'
+"""
 
 import argparse
 import os
@@ -22,13 +26,18 @@ def _parse_args() -> argparse.Namespace:
         help="Port to listen on (default: 5001, env: PORT)",
     )
     parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable Flask debug mode (local development only; never on a public host)",
+    )
+    parser.add_argument(
         "--no-debug",
         action="store_true",
-        help="Disable Flask debug mode",
+        help=argparse.SUPPRESS,  # kept for older scripts; debug is already off by default
     )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = _parse_args()
-    app.run(host=args.host, port=args.port, debug=not args.no_debug)
+    app.run(host=args.host, port=args.port, debug=bool(args.debug) and not args.no_debug)

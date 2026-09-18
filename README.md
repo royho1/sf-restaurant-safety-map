@@ -61,7 +61,7 @@ backend/        Flask API (app factory, blueprints, SQLite helpers)
     utils/db.py        read-only per-request connection, startup indexes
   db/.gitkeep          safety.db is generated, not committed
   requirements.txt
-  run.py               dev entry point (HOST/PORT env, --no-debug)
+  run.py               dev entry point (HOST/PORT env, --debug opt-in)
 
 frontend/       Vite + React app
   src/App.jsx          single-file UI: map, search, sidebar, popup, filters
@@ -112,18 +112,26 @@ Then run the API:
 
 ```bash
 cd backend
-python run.py                      # binds 127.0.0.1:5001 by default
+python run.py                      # binds 127.0.0.1:5001 by default (debug off)
 ```
 
 Override with env vars or flags:
 
 ```bash
+python run.py --debug              # local Flask debugger only
 PORT=8080 python run.py
-python run.py --host 0.0.0.0 --port 5050 --no-debug
+python run.py --host 0.0.0.0 --port 5050
 SAFETY_DB_PATH=/abs/path/to/safety.db python run.py
 CORS_ORIGINS=http://localhost:5173 python run.py
 DATA_REFRESH_HOURS=0 python run.py          # disable background DataSF checks
 DATA_REFRESH_HOURS=6 python run.py          # check every 6 hours instead of 24
+```
+
+For a production-like process (also what the API Docker image runs):
+
+```bash
+cd backend
+gunicorn -b 127.0.0.1:5001 -w 2 --timeout 60 'run:app'
 ```
 
 Sanity check: `curl http://localhost:5001/api/health` returns `{"status":"ok"}`. Returns 503 if `safety.db` is missing.
@@ -235,17 +243,19 @@ Three tables, all built from the DataSF feed:
 
 Findings from a sweep of the source tree and git history:
 
-- **No leaked secrets.** Git history (6 commits) contains no API keys, no Mapbox tokens, no .env files, no credentials. The Mapbox token is read from `import.meta.env.VITE_MAPBOX_TOKEN` and is the only secret the app uses. Both `.env` and `frontend/.env` are gitignored.
+- **No leaked secrets.** Git history contains no API keys, no Mapbox tokens, no .env files, no credentials. The Mapbox token is read from `import.meta.env.VITE_MAPBOX_TOKEN` and is the only secret the app uses. Both `.env` and `frontend/.env` are gitignored.
 - **SQL injection.** All queries use parameterized `?` placeholders via `sqlite3.Connection.execute(sql, params)`. The shared CTEs are static strings; user input never enters SQL via concatenation.
 - **CORS.** Unset `CORS_ORIGINS` still allows any origin (fine for local dev). Set `CORS_ORIGINS` to a comma-separated allowlist before deploying, e.g. `CORS_ORIGINS=https://yourdomain.com`.
-- **Flask debug mode is on by default.** `run.py` calls `app.run(..., debug=True)` unless `--no-debug` is passed. Werkzeug's debugger allows arbitrary code execution if exposed; never run with debug on a public host. Use `--no-debug` (or a real WSGI server like gunicorn/uwsgi) in production.
+- **Flask debug mode is opt-in.** `run.py` defaults to `debug=False`. Pass `--debug` only for local development. Werkzeug's debugger allows arbitrary code execution if exposed; never enable it on a public host. The API Docker image runs gunicorn, not the Flask development server.
 - **Bound to 127.0.0.1 by default.** The dev server is local-only unless you pass `--host 0.0.0.0` or set `HOST=0.0.0.0`.
+- **Compose does not publish the API port.** `docker-compose.yml` exposes `api:5001` on the private Compose network only. Browser traffic goes through nginx on `:8080`. Do not re-add a host `5001:5001` mapping on internet-facing hosts.
+- **nginx security headers.** `frontend/nginx.conf` sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and a Mapbox-compatible CSP.
 - **Mapbox token exposure (by design).** `VITE_MAPBOX_TOKEN` is bundled into the client JS — it's a public token and that's how Mapbox works. Lock it down in the Mapbox dashboard with URL restrictions (only allow it to be used from your domain) so someone can't lift it from your bundle and run up your bill.
 - **Geolocation, deny-by-default.** "Near Me" calls `navigator.geolocation.getCurrentPosition`, which the browser gates behind a user permission prompt. Coordinates stay client-side; nothing is sent to the backend.
 - **No authentication.** All endpoints are open. That's appropriate for a read-only public-data viewer, but if you ever add write endpoints, add auth first.
-- **DB file is opened read-only.** Request-time connections use `sqlite3.connect(..., uri=True)` with `mode=ro`. Indexes are created once at app startup (and by `scripts/load_db.py`) over a short-lived write connection.
+- **DB file is opened read-only.** Request-time connections use `sqlite3.connect(..., uri=True)` with `mode=ro`. Indexes are created once at app startup (and by `scripts/load_db.py`) over a short-lived write connection. On startup, a stale schema (missing columns such as `inspector`) triggers an automatic rebuild from processed CSVs when those CSVs are current.
 
-Nothing critical to fix before publishing the repo. Before deploying anywhere public: turn off debug, lock CORS, restrict the Mapbox token by URL, and put the API behind a real WSGI server.
+Nothing critical to fix before publishing the repo. Before deploying anywhere public: lock CORS, restrict the Mapbox token by URL, terminate TLS at nginx/CDN, and keep the API behind the reverse proxy (not published on the host).
 
 ## Data source and license
 

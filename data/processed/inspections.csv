@@ -123,6 +123,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06733150:2025-06-17:0,06733150,2025-06-17,Reinspection,Pass,6.0,,,Patrick Wood
 06733150:2026-02-26:0,06733150,2026-02-26,,Pass,6.0,,,Roy Bwogi
 06733151:2025-04-21:0,06733151,2025-04-21,Routine,Pass,1.0,,,Sojeatta Khim
+06733154:2026-08-25:0,06733154,2026-08-25,,Pass,4.0,,,Sojeatta Khim
 06733157:2024-01-16:0,06733157,2024-01-16,Routine,Pass,,,,Oneida Romero
 06733158:2025-05-05:0,06733158,2025-05-05,Complaint (I),Pass,,,,Sharon Aguila-Leonard
 06733158:2025-05-05:1,06733158,2025-05-05,Routine,Pass,5.0,,,Sharon Aguila-Leonard
@@ -326,6 +327,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06733248:2024-09-17:0,06733248,2024-09-17,New Ownership (R),Pass,,,,Sharon Aguila-Leonard
 06733248:2024-10-30:0,06733248,2024-10-30,Routine,Pass,1.0,,,Sharon Aguila-Leonard
 06733248:2026-02-02:0,06733248,2026-02-02,,Pass,3.0,,,Lucas  Willis
+06733248:2026-09-16:0,06733248,2026-09-16,,Pass,,,,Lucas  Willis
 06733249:2024-02-13:0,06733249,2024-02-13,,Pass,1.0,,,Luz Brown
 06733249:2024-02-14:0,06733249,2024-02-14,New Ownership (I),Pass,,,,Luz Brown
 06733249:2024-03-12:0,06733249,2024-03-12,,,,,,Luz Brown
@@ -364,6 +366,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06733258:2024-03-14:0,06733258,2024-03-14,Routine,Pass,,,,Luz Brown
 06733259:2026-08-25:0,06733259,2026-08-25,,Pass,,,,Alyssa  Manzano
 06733259:2026-08-25:1,06733259,2026-08-25,,Pass,,,,Alyssa  Manzano
+06733259:2026-09-01:0,06733259,2026-09-01,,Pass,,,,John  Wells
 06733260:2024-03-27:0,06733260,2024-03-27,Structural,,,,,Joanna Huber
 06733262:2024-01-10:0,06733262,2024-01-10,New Ownership (I),Pass,,,,Philips Ossai
 06733262:2024-01-10:1,06733262,2024-01-10,Routine,Pass,,,,Philips Ossai
@@ -576,6 +579,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06733380:2024-03-21:1,06733380,2024-03-21,New Ownership (I),Pass,,,,Sharon Aguila-Leonard
 06733380:2024-03-21:2,06733380,2024-03-21,Routine,Pass,,,,Sharon Aguila-Leonard
 06733380:2025-06-16:0,06733380,2025-06-16,Routine,Pass,3.0,,,Carlos Barragan
+06733383:2026-08-25:0,06733383,2026-08-25,,Pass,,,,Sojeatta Khim
 06733385:2024-08-16:0,06733385,2024-08-16,,Pass,,,,Rochelle Veloso
 06733387:2024-01-02:0,06733387,2024-01-02,Routine,Conditional Pass,12.0,,,Joanna Huber
 06733387:2024-01-16:0,06733387,2024-01-16,New Ownership (I),Pass,,,,Joanna Huber
@@ -1439,6 +1443,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06733695:2024-05-30:0,06733695,2024-05-30,New Ownership (R),Pass,,,,Sharon Aguila-Leonard
 06733695:2026-04-07:0,06733695,2026-04-07,,Pass,10.0,,,Lucas  Willis
 06733695:2026-04-14:0,06733695,2026-04-14,,Pass,,,,Lucas  Willis
+06733695:2026-09-16:0,06733695,2026-09-16,,Pass,3.0,,,Lucas  Willis
 06733696:2024-03-27:0,06733696,2024-03-27,New Ownership (I),Pass,,,,Patrick Wood
 06733699:2024-04-23:0,06733699,2024-04-23,,Pass,1.0,,,Sharon Aguila-Leonard
 06733699:2024-07-11:0,06733699,2024-07-11,,Pass,,,,Sharon Aguila-Leonard
@@ -1482,6 +1487,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06733709:2024-05-15:0,06733709,2024-05-15,Reinspection,Pass,1.0,,,William Bajjalieh
 06733709:2025-05-14:0,06733709,2025-05-14,Routine,Pass,3.0,,,William Bajjalieh
 06733709:2025-05-28:0,06733709,2025-05-28,Reinspection,Pass,1.0,,,William Bajjalieh
+06733709:2026-09-02:0,06733709,2026-09-02,,Pass,3.0,,,Thuan  Tieu
 06733712:2024-08-28:0,06733712,2024-08-28,Routine,Pass,3.0,,,Michael Mooney
 06733712:2026-08-27:0,06733712,2026-08-27,,Pass,2.0,,,Michael Mooney
 06733713:2024-04-03:0,06733713,2024-04-03,,Pass,12.0,,,Luz Brown
@@ -1552,6 +1558,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06733734:2025-09-03:0,06733734,2025-09-03,,Pass,3.0,,,Patrick Wood
 06733734:2026-03-10:0,06733734,2026-03-10,,Pass,2.0,,,Patrick Wood
 06733734:2026-03-25:0,06733734,2026-03-25,,Pass,2.0,,,Patrick Wood
+06733734:2026-09-15:0,06733734,2026-09-15,,Pass,2.0,,,Patrick Wood
 06733735:2024-07-03:0,06733735,2024-07-03,Routine,Pass,1.0,,,Aron Wong
 06733735:2024-07-09:0,06733735,2024-07-09,Reinspection,Pass,,,,Aron Wong
 06733736:2024-04-08:0,06733736,2024-04-08,,Pass,5.0,,,Kristine Der
@@ -1760,6 +1767,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06733858:2024-11-08:0,06733858,2024-11-08,Reinspection,Pass,,,,Patrick Wood
 06733858:2025-04-02:0,06733858,2025-04-02,Routine,Pass,5.0,,,Roy Bwogi
 06733858:2026-03-06:0,06733858,2026-03-06,,Pass,10.0,,,Montre  Tieu
+06733858:2026-09-11:0,06733858,2026-09-11,,Pass,10.0,,,Montre  Tieu
 06733859:2025-03-19:0,06733859,2025-03-19,Structural,Pass,,,,Tiombe Wiley
 06733860:2024-04-18:0,06733860,2024-04-18,Routine,Pass,,,,Kevin  Eng
 06733860:2024-04-18:1,06733860,2024-04-18,Routine,Pass,2.0,,,Rochelle Veloso
@@ -2286,6 +2294,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734116:2024-09-24:0,06734116,2024-09-24,Reinspection,Pass,,,,John  Wells
 06734116:2025-04-03:0,06734116,2025-04-03,Routine,Pass,2.0,,,John  Wells
 06734116:2025-11-12:0,06734116,2025-11-12,,Pass,,,,Sophia Huie
+06734116:2026-09-02:0,06734116,2026-09-02,,Pass,,,,Sophia Huie
 06734117:2024-05-29:0,06734117,2024-05-29,New Ownership (I),Pass,,,,Danny Lee
 06734117:2024-06-17:0,06734117,2024-06-17,New Ownership (R),Pass,,,,Danny Lee
 06734117:2025-01-29:0,06734117,2025-01-29,Routine,Pass,,,,Farhan Khan
@@ -2385,6 +2394,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734159:2025-09-02:0,06734159,2025-09-02,,Pass,7.0,,,Patrick Wood
 06734159:2026-03-04:0,06734159,2026-03-04,,Pass,6.0,,,Patrick Wood
 06734159:2026-03-19:0,06734159,2026-03-19,,Pass,3.0,,,Patrick Wood
+06734159:2026-09-09:0,06734159,2026-09-09,,Pass,4.0,,,Patrick Wood
 06734160:2024-05-21:0,06734160,2024-05-21,,Pass,12.0,,,Kristine Der
 06734160:2024-08-21:0,06734160,2024-08-21,,Pass,,,,Kristine Der
 06734160:2024-08-27:0,06734160,2024-08-27,,Pass,,,,Kristine Der
@@ -2761,6 +2771,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734316:2025-01-29:0,06734316,2025-01-29,Reinspection,Pass,,,,Patrick Wood
 06734316:2025-09-03:0,06734316,2025-09-03,,Pass,3.0,,,Patrick Wood
 06734316:2026-03-10:0,06734316,2026-03-10,,Pass,1.0,,,Patrick Wood
+06734316:2026-09-16:0,06734316,2026-09-16,,Pass,4.0,,,Patrick Wood
 06734320:2024-08-07:0,06734320,2024-08-07,,,,,,Rochelle Veloso
 06734320:2024-08-07:1,06734320,2024-08-07,New Ownership (I),Pass,,,,Rochelle Veloso
 06734320:2024-09-24:0,06734320,2024-09-24,Routine,Pass,,,,Zack Parsons
@@ -2800,6 +2811,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734335:2024-06-27:0,06734335,2024-06-27,Routine,Pass,5.0,,,William Bajjalieh
 06734335:2024-07-05:0,06734335,2024-07-05,Reinspection,Pass,5.0,,,William Bajjalieh
 06734335:2026-03-04:0,06734335,2026-03-04,,Pass,9.0,,,Jessica Jang
+06734335:2026-09-10:0,06734335,2026-09-10,,Pass,,,,Jessica Jang
 06734336:2024-07-22:0,06734336,2024-07-22,,Pass,5.0,,,Joanna Huber
 06734336:2024-08-08:0,06734336,2024-08-08,,Pass,,,,Joanna Huber
 06734336:2024-08-29:0,06734336,2024-08-29,,Pass,5.0,,,Joanna Huber
@@ -2847,6 +2859,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734358:2024-07-17:0,06734358,2024-07-17,Routine,Pass,,,,Patrick Wood
 06734358:2025-04-08:0,06734358,2025-04-08,Routine,Pass,2.0,,,Roy Bwogi
 06734358:2025-10-10:0,06734358,2025-10-10,,Pass,,,,Roy Bwogi
+06734358:2026-09-16:0,06734358,2026-09-16,,Pass,1.0,,,Roy Bwogi
 06734359:2024-07-09:0,06734359,2024-07-09,,Pass,,,,Joanna Huber
 06734359:2025-06-10:0,06734359,2025-06-10,,Pass,,,,Joanna Huber
 06734360:2024-07-10:0,06734360,2024-07-10,New Ownership (I),Pass,,,,Luz Brown
@@ -2918,6 +2931,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734391:2025-06-18:1,06734391,2025-06-18,New Ownership (R),Pass,,,,Luz Brown
 06734391:2025-06-18:2,06734391,2025-06-18,New Ownership (R),Pass,,,,Luz Brown
 06734391:2025-10-01:0,06734391,2025-10-01,,Pass,4.0,,,Roy Bwogi
+06734391:2026-09-16:0,06734391,2026-09-16,,Pass,3.0,,,Roy Bwogi
 06734394:2024-07-09:0,06734394,2024-07-09,,Pass,,,,Sharon Aguila-Leonard
 06734395:2024-07-16:0,06734395,2024-07-16,New Ownership (I),Pass,,,,Danny Nguyen
 06734395:2024-12-18:0,06734395,2024-12-18,Routine,Pass,1.0,,,Abel Simon
@@ -3078,6 +3092,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734462:2024-10-29:2,06734462,2024-10-29,New Ownership (I),Pass,,,,Rochelle Veloso
 06734462:2024-12-06:0,06734462,2024-12-06,New Ownership (R),Pass,,,,Rochelle Veloso
 06734462:2025-03-24:0,06734462,2025-03-24,Routine,Pass,,,,Roy Bwogi
+06734462:2026-09-15:0,06734462,2026-09-15,,Pass,2.0,,,Roy Bwogi
 06734463:2024-07-23:0,06734463,2024-07-23,Routine,Pass,2.0,,,William Bajjalieh
 06734465:2024-07-17:0,06734465,2024-07-17,New Ownership (I),Pass,,,,Maribel Rodriguez
 06734465:2024-09-23:0,06734465,2024-09-23,Reinspection,Pass,,,,Maribel Rodriguez
@@ -3347,6 +3362,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734620:2025-07-29:0,06734620,2025-07-29,,Pass,7.0,,,John  Wells
 06734620:2026-02-10:0,06734620,2026-02-10,,Pass,5.0,,,John  Wells
 06734620:2026-04-30:0,06734620,2026-04-30,,Pass,,,,John  Wells
+06734620:2026-09-02:0,06734620,2026-09-02,,Pass,4.0,,,John  Wells
 06734621:2024-09-04:0,06734621,2024-09-04,New Ownership (I),Pass,3.0,,,John  Wells
 06734621:2024-09-12:0,06734621,2024-09-12,New Ownership (R),Pass,,,,John  Wells
 06734621:2024-11-19:0,06734621,2024-11-19,Routine,Pass,6.0,,,John  Wells
@@ -3506,6 +3522,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06734697:2025-01-30:0,06734697,2025-01-30,New Ownership (I),Pass,,,,William Bajjalieh
 06734697:2025-04-01:0,06734697,2025-04-01,Routine,Pass,4.0,,,William Bajjalieh
 06734697:2026-03-18:0,06734697,2026-03-18,,Pass,9.0,,,Thuan  Tieu
+06734697:2026-09-02:0,06734697,2026-09-02,,Pass,4.0,,,Thuan  Tieu
 06734698:2024-09-11:0,06734698,2024-09-11,New Ownership (I),Pass,,,,Luz Brown
 06734698:2024-09-18:0,06734698,2024-09-18,New Ownership (R),Pass,,,,Luz Brown
 06734698:2024-09-20:0,06734698,2024-09-20,New Ownership (R),Pass,,,,Luz Brown
@@ -4294,6 +4311,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06735200:2025-09-02:0,06735200,2025-09-02,,Pass,5.0,,,John  Wells
 06735200:2026-02-24:0,06735200,2026-02-24,,Pass,5.0,,,John  Wells
 06735200:2026-02-25:0,06735200,2026-02-25,,Pass,1.0,,,John  Wells
+06735200:2026-09-02:0,06735200,2026-09-02,,Pass,3.0,,,John  Wells
 06735201:2024-11-27:0,06735201,2024-11-27,,Pass,9.0,,,Joanna Huber
 06735202:2024-12-12:0,06735202,2024-12-12,New Ownership (I),Pass,,,,Jesus Zapien
 06735202:2025-05-20:0,06735202,2025-05-20,Routine,Pass,2.0,,,Jesus Zapien
@@ -4480,6 +4498,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06735326:2025-01-30:0,06735326,2025-01-30,New Ownership (I),Pass,,,,Tiombe Wiley
 06735326:2025-02-12:0,06735326,2025-02-12,New Ownership (R),Pass,,,,Tiombe Wiley
 06735326:2025-06-16:0,06735326,2025-06-16,Routine,Pass,8.0,,,Tiombe Wiley
+06735326:2026-09-10:0,06735326,2026-09-10,,Pass,,,,Sojeatta Khim
+06735326:2026-09-10:1,06735326,2026-09-10,,Conditional Pass,11.0,,,Sojeatta Khim
 06735327:2025-01-03:0,06735327,2025-01-03,New Ownership (I),Pass,1.0,,,Katie Dea
 06735328:2025-02-13:0,06735328,2025-02-13,New Ownership (I),Pass,,,,Carlos Barragan
 06735328:2025-04-25:0,06735328,2025-04-25,,Pass,5.0,,,Douglas Obana
@@ -5098,6 +5118,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06743906:2025-05-14:0,06743906,2025-05-14,New Ownership (I),Pass,,,,Zack Parsons
 06743909:2025-04-17:0,06743909,2025-04-17,New Ownership (I),Pass,2.0,,,John  Wells
 06743909:2025-05-28:0,06743909,2025-05-28,New Ownership (R),Pass,,,,John  Wells
+06743909:2026-09-03:0,06743909,2026-09-03,,Pass,,,,John  Wells
 06743912:2025-05-14:0,06743912,2025-05-14,New Ownership (I),Pass,,,,Danny Nguyen
 06743913:2025-04-11:0,06743913,2025-04-11,New Ownership (I),Pass,,,,Katie Dea
 06743913:2025-06-05:0,06743913,2025-06-05,New Ownership (R),Pass,,,,Katie Dea
@@ -5207,6 +5228,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06743996:2025-06-10:0,06743996,2025-06-10,Site Visit,Pass,,,,William Bajjalieh
 06743996:2025-06-11:0,06743996,2025-06-11,Reinspection,Pass,2.0,,,William Bajjalieh
 06743996:2026-08-26:0,06743996,2026-08-26,,Pass,3.0,,,Thuan  Tieu
+06743996:2026-09-02:0,06743996,2026-09-02,,Pass,,,,Thuan  Tieu
 06743997:2025-09-02:0,06743997,2025-09-02,,Pass,,,,Jessica Jang
 06743997:2025-10-07:0,06743997,2025-10-07,,Pass,2.0,,,Jessica Jang
 06743997:2026-04-08:0,06743997,2026-04-08,,Pass,3.0,,,Jessica Jang
@@ -5317,6 +5339,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06744082:2025-05-01:0,06744082,2025-05-01,New Ownership (I),Pass,,,,Danny Nguyen
 06744084:2025-05-28:0,06744084,2025-05-28,Complaint (I),Pass,,,,Joanna Huber
 06744084:2025-05-28:1,06744084,2025-05-28,New Ownership (I),Pass,,,,Joanna Huber
+06744084:2026-09-01:0,06744084,2026-09-01,,Pass,2.0,,,John  Wells
 06744090:2025-06-18:0,06744090,2025-06-18,New Ownership (I),Pass,,,,Danny Nguyen
 06744091:2025-05-06:0,06744091,2025-05-06,,Pass,14.0,,,Joanna Huber
 06744097:2025-05-23:0,06744097,2025-05-23,New Ownership (I),Pass,,,,Zack Parsons
@@ -5493,6 +5516,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06744304:2025-06-11:1,06744304,2025-06-11,Routine,Pass,3.0,,,Kyle Chan
 06744304:2026-02-25:0,06744304,2026-02-25,,Pass,,,,Usman Javaid
 06744310:2025-06-24:0,06744310,2025-06-24,New Ownership (I),Pass,,,,Maribel Rodriguez
+06744311:2026-09-16:0,06744311,2026-09-16,,Pass,,,,Montre  Tieu
 06744312:2025-06-04:0,06744312,2025-06-04,,Pass,,,,Luz Brown
 06744314:2025-07-11:0,06744314,2025-07-11,,Pass,,,,Amy Johnson
 06744314:2025-07-15:0,06744314,2025-07-15,,Pass,,,,Amy Johnson
@@ -5580,6 +5604,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06744564:2025-07-15:0,06744564,2025-07-15,,Pass,,,,Michael Mooney
 06744564:2025-09-09:0,06744564,2025-09-09,,Pass,6.0,,,John  Wells
 06744564:2026-03-12:0,06744564,2026-03-12,,Pass,4.0,,,John  Wells
+06744564:2026-09-09:0,06744564,2026-09-09,,Pass,4.0,,,John  Wells
 06744569:2026-05-07:0,06744569,2026-05-07,,Pass,3.0,,,Patrick Wood
 06744569:2026-05-21:0,06744569,2026-05-21,,Pass,2.0,,,Patrick Wood
 06744569:2026-06-12:0,06744569,2026-06-12,,Pass,,,,Patrick Wood
@@ -5594,14 +5619,18 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06744626:2025-08-21:0,06744626,2025-08-21,,Pass,,,,Sophia Huie
 06744626:2025-08-21:1,06744626,2025-08-21,,Pass,,,,Sophia Huie
 06744626:2026-01-08:0,06744626,2026-01-08,,Pass,,,,Sophia Huie
+06744626:2026-09-02:0,06744626,2026-09-02,,Pass,2.0,,,Sophia Huie
+06744626:2026-09-02:1,06744626,2026-09-02,,Pass,,,,Sophia Huie
 06744628:2026-02-09:0,06744628,2026-02-09,,Pass,3.0,,,Katherine Tuazon
 06744702:2025-07-25:0,06744702,2025-07-25,,Pass,,,,Zack Parsons
 06744702:2025-07-25:1,06744702,2025-07-25,,Pass,,,,Zack Parsons
 06744704:2025-12-09:0,06744704,2025-12-09,,Pass,,,,Farhan Khan
 06744710:2025-08-20:0,06744710,2025-08-20,,Pass,,,,Danny Nguyen
 06744710:2026-06-30:0,06744710,2026-06-30,,Pass,4.0,,,Lucas  Willis
+06744714:2026-09-15:0,06744714,2026-09-15,,Pass,2.0,,,Thuan  Tieu
 06744715:2025-08-05:0,06744715,2025-08-05,,Pass,,,,Michael Mooney
 06744716:2025-11-05:0,06744716,2025-11-05,,Pass,7.0,,,Montre  Tieu
+06744718:2026-09-08:0,06744718,2026-09-08,,Pass,4.0,,,Thuan  Tieu
 06744726:2026-02-06:0,06744726,2026-02-06,,Pass,1.0,,,Patrick Wood
 06744726:2026-08-13:0,06744726,2026-08-13,,Pass,1.0,,,Patrick Wood
 06744729:2025-07-30:0,06744729,2025-07-30,,Pass,,,,Jesus Zapien
@@ -5655,6 +5684,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06745324:2026-02-04:0,06745324,2026-02-04,,Pass,,,,Sophia Huie
 06745342:2026-02-05:0,06745342,2026-02-05,,Pass,3.0,,,Lucas  Willis
 06745342:2026-07-01:0,06745342,2026-07-01,,Pass,3.0,,,Lucas  Willis
+06745344:2026-08-25:0,06745344,2026-08-25,,Pass,,,,Sojeatta Khim
 06745351:2025-09-30:0,06745351,2025-09-30,,Pass,1.0,,,John  Wells
 06745351:2026-01-14:0,06745351,2026-01-14,,Pass,3.0,,,John  Wells
 06745351:2026-01-16:0,06745351,2026-01-16,,Pass,,,,John  Wells
@@ -5681,6 +5711,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06745616:2026-01-14:0,06745616,2026-01-14,,Pass,4.0,,,John  Wells
 06745616:2026-07-22:0,06745616,2026-07-22,,Pass,9.0,,,John  Wells
 06745616:2026-07-31:0,06745616,2026-07-31,,Pass,3.0,,,John  Wells
+06745616:2026-09-03:0,06745616,2026-09-03,,Pass,,,,John  Wells
 06745619:2025-11-13:0,06745619,2025-11-13,,Pass,,,,Jesus Zapien
 06745619:2025-11-13:1,06745619,2025-11-13,,Pass,,,,Jesus Zapien
 06745624:2025-10-16:0,06745624,2025-10-16,,Pass,1.0,,,Michael Mooney
@@ -5700,6 +5731,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06745665:2026-08-27:0,06745665,2026-08-27,,Pass,1.0,,,Thuan  Tieu
 06745668:2025-11-12:0,06745668,2025-11-12,,Pass,1.0,,,John  Wells
 06745668:2026-02-10:0,06745668,2026-02-10,,Pass,4.0,,,John  Wells
+06745668:2026-09-03:0,06745668,2026-09-03,,Pass,8.0,,,John  Wells
 06745675:2025-11-10:0,06745675,2025-11-10,,Pass,,,,Sojeatta Khim
 06745676:2025-11-17:0,06745676,2025-11-17,,Pass,,,,Jessica Jang
 06745684:2025-12-04:0,06745684,2025-12-04,,Pass,,,,Alyssa  Manzano
@@ -5724,6 +5756,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06745743:2025-11-13:1,06745743,2025-11-13,,Pass,,,,Jesus Zapien
 06745744:2025-12-12:0,06745744,2025-12-12,,Pass,,,,Cristina Zepeda
 06745744:2026-03-06:0,06745744,2026-03-06,,Pass,,,,Cristina Zepeda
+06745744:2026-09-15:0,06745744,2026-09-15,,Pass,1.0,,,Cristina Zepeda
 06745745:2026-02-26:0,06745745,2026-02-26,,Pass,,,,Katherine Tuazon
 06745757:2025-12-05:0,06745757,2025-12-05,,Pass,,,,Zack Parsons
 06745757:2025-12-10:0,06745757,2025-12-10,,Pass,,,,Zack Parsons
@@ -5782,6 +5815,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06745922:2026-01-27:0,06745922,2026-01-27,,Pass,,,,Patrick Wood
 06745922:2026-03-06:0,06745922,2026-03-06,,Pass,,,,Patrick Wood
 06745922:2026-05-12:0,06745922,2026-05-12,,Pass,,,,Patrick Wood
+06745922:2026-09-08:0,06745922,2026-09-08,,Pass,1.0,,,Patrick Wood
 06745925:2026-02-26:0,06745925,2026-02-26,,Pass,,,,Mary Joanne Freitas
 06745927:2026-02-06:0,06745927,2026-02-06,,Pass,,,,Roy Bwogi
 06745942:2026-02-12:0,06745942,2026-02-12,,Pass,4.0,,,Zack Parsons
@@ -5806,6 +5840,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06746014:2026-04-24:0,06746014,2026-04-24,,Pass,,,,Roy Bwogi
 06746018:2026-03-13:0,06746018,2026-03-13,,Pass,,,,Zack Parsons
 06746018:2026-03-13:1,06746018,2026-03-13,,Pass,,,,Zack Parsons
+06746034:2026-09-10:0,06746034,2026-09-10,,Pass,,,,Carlos Barragan
 06746036:2026-02-02:0,06746036,2026-02-02,,Pass,,,,Thuan  Tieu
 06746036:2026-05-01:0,06746036,2026-05-01,,Pass,1.0,,,Thuan  Tieu
 06746043:2026-01-29:0,06746043,2026-01-29,,Pass,,,,Usman Javaid
@@ -5880,6 +5915,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06746327:2026-03-26:0,06746327,2026-03-26,,Pass,,,,Patrick Wood
 06746327:2026-03-26:1,06746327,2026-03-26,,Pass,,,,Patrick Wood
 06746346:2026-03-26:0,06746346,2026-03-26,,Pass,,,,Lucas  Willis
+06746346:2026-09-10:0,06746346,2026-09-10,,Pass,,,,Lucas  Willis
 06746347:2026-03-30:0,06746347,2026-03-30,,Pass,,,,Usman Javaid
 06746351:2026-08-05:0,06746351,2026-08-05,,Pass,1.0,,,William Bajjalieh
 06746360:2026-07-23:0,06746360,2026-07-23,,Pass,2.0,,,John  Wells
@@ -5958,6 +5994,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06761863:2026-07-31:0,06761863,2026-07-31,,Pass,,,,Aron Wong
 06761864:2026-06-16:0,06761864,2026-06-16,,Pass,,,,Jessica Jang
 06761864:2026-07-21:0,06761864,2026-07-21,,Pass,,,,Jessica Jang
+06761877:2026-09-01:0,06761877,2026-09-01,,Pass,,,,Zack Parsons
 06761878:2026-06-16:0,06761878,2026-06-16,,Pass,,,,Sophia Huie
 06761878:2026-08-10:0,06761878,2026-08-10,,Pass,,,,Sophia Huie
 06761879:2026-06-16:0,06761879,2026-06-16,,Pass,,,,Sophia Huie
@@ -6021,6 +6058,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06761982:2026-06-26:1,06761982,2026-06-26,,Pass,,,,Zack Parsons
 06761982:2026-06-26:2,06761982,2026-06-26,,Pass,1.0,,,Zack Parsons
 06761985:2026-06-26:0,06761985,2026-06-26,,Pass,,,,Zack Parsons
+06761986:2026-09-03:0,06761986,2026-09-03,,Pass,,,,Japjit Deol
+06761986:2026-09-03:1,06761986,2026-09-03,,Pass,1.0,,,Japjit Deol
 06761996:2026-06-25:0,06761996,2026-06-25,,Pass,,,,Patrick Wood
 06761996:2026-06-25:1,06761996,2026-06-25,,Pass,,,,Patrick Wood
 06762022:2026-07-24:0,06762022,2026-07-24,,Pass,,,,Roy Bwogi
@@ -6030,6 +6069,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06762077:2026-07-31:1,06762077,2026-07-31,,Pass,,,,Zack Parsons
 06762078:2026-08-25:0,06762078,2026-08-25,,Pass,2.0,,,Thuan  Tieu
 06762139:2026-08-25:0,06762139,2026-08-25,,Pass,6.0,,,Thuan  Tieu
+06762139:2026-09-02:0,06762139,2026-09-02,,Pass,1.0,,,Thuan  Tieu
 06762164:2026-07-20:0,06762164,2026-07-20,,Pass,,,,Sophia Huie
 06762165:2026-07-08:0,06762165,2026-07-08,,Pass,,,,Montre  Tieu
 06762168:2026-07-22:0,06762168,2026-07-22,,Pass,,,,Japjit Deol
@@ -6045,13 +6085,58 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 06762303:2026-07-30:0,06762303,2026-07-30,,Pass,5.0,,,John  Wells
 06762306:2026-07-31:0,06762306,2026-07-31,,Pass,2.0,,,John  Wells
 06762319:2026-08-24:0,06762319,2026-08-24,,Pass,,,,Sojeatta Khim
+06762323:2026-09-02:0,06762323,2026-09-02,,Pass,,,,Sojeatta Khim
+06762361:2026-09-02:0,06762361,2026-09-02,,Pass,,,,Zack Parsons
 06762386:2026-08-25:0,06762386,2026-08-25,,Pass,,,,Alyssa  Manzano
 06762393:2026-08-19:0,06762393,2026-08-19,,Pass,,,,Thuan  Tieu
 06762395:2026-08-18:0,06762395,2026-08-18,,Pass,,,,Thuan  Tieu
 06762413:2026-08-24:0,06762413,2026-08-24,,Pass,,,,Usman Javaid
+06762413:2026-09-14:0,06762413,2026-09-14,,Pass,13.0,,,Usman Javaid
+06762454:2026-09-11:0,06762454,2026-09-11,,Pass,,,,Zack Parsons
 06762464:2026-08-26:0,06762464,2026-08-26,,Pass,,,,Thuan  Tieu
 06762467:2026-08-28:0,06762467,2026-08-28,,Pass,,,,Montre  Tieu
+06762472:2026-09-09:0,06762472,2026-09-09,,Pass,,,,Montre  Tieu
 06762475:2026-08-26:0,06762475,2026-08-26,,Pass,,,,Usman Javaid
+06762475:2026-09-03:0,06762475,2026-09-03,,Pass,,,,Usman Javaid
+06762475:2026-09-03:1,06762475,2026-09-03,,Pass,2.0,,,Usman Javaid
+06762479:2026-09-10:0,06762479,2026-09-10,,Pass,,,,Sojeatta Khim
+06762497:2026-09-10:0,06762497,2026-09-10,,Pass,,,,Patrick Wood
+06762497:2026-09-10:1,06762497,2026-09-10,,Pass,,,,Patrick Wood
+06762499:2026-09-10:0,06762499,2026-09-10,,Pass,,,,Patrick Wood
+06762499:2026-09-10:1,06762499,2026-09-10,,Pass,,,,Patrick Wood
+06762500:2026-09-10:0,06762500,2026-09-10,,Pass,,,,Patrick Wood
+06762500:2026-09-10:1,06762500,2026-09-10,,Pass,,,,Patrick Wood
+06762501:2026-09-10:0,06762501,2026-09-10,,Pass,,,,Patrick Wood
+06762501:2026-09-10:1,06762501,2026-09-10,,Pass,,,,Patrick Wood
+06762502:2026-09-10:0,06762502,2026-09-10,,Pass,,,,Patrick Wood
+06762502:2026-09-10:1,06762502,2026-09-10,,Pass,,,,Patrick Wood
+06762503:2026-09-10:0,06762503,2026-09-10,,Pass,,,,Patrick Wood
+06762503:2026-09-10:1,06762503,2026-09-10,,Pass,,,,Patrick Wood
+06762504:2026-09-10:0,06762504,2026-09-10,,Pass,,,,Patrick Wood
+06762504:2026-09-10:1,06762504,2026-09-10,,Pass,,,,Patrick Wood
+06762506:2026-09-10:0,06762506,2026-09-10,,Pass,,,,Patrick Wood
+06762506:2026-09-10:1,06762506,2026-09-10,,Pass,,,,Patrick Wood
+06762507:2026-09-10:0,06762507,2026-09-10,,Pass,,,,Patrick Wood
+06762507:2026-09-10:1,06762507,2026-09-10,,Pass,,,,Patrick Wood
+06762508:2026-09-10:0,06762508,2026-09-10,,Pass,,,,Patrick Wood
+06762508:2026-09-10:1,06762508,2026-09-10,,Pass,,,,Patrick Wood
+06762509:2026-09-10:0,06762509,2026-09-10,,Pass,,,,Patrick Wood
+06762509:2026-09-10:1,06762509,2026-09-10,,Pass,,,,Patrick Wood
+06762510:2026-09-10:0,06762510,2026-09-10,,Pass,,,,Patrick Wood
+06762510:2026-09-10:1,06762510,2026-09-10,,Pass,,,,Patrick Wood
+06762511:2026-09-10:0,06762511,2026-09-10,,Pass,,,,Patrick Wood
+06762511:2026-09-10:1,06762511,2026-09-10,,Pass,,,,Patrick Wood
+06762513:2026-09-10:0,06762513,2026-09-10,,Pass,,,,Patrick Wood
+06762513:2026-09-10:1,06762513,2026-09-10,,Pass,,,,Patrick Wood
+06762514:2026-09-10:0,06762514,2026-09-10,,Pass,,,,Patrick Wood
+06762514:2026-09-10:1,06762514,2026-09-10,,Pass,,,,Patrick Wood
+06762515:2026-09-10:0,06762515,2026-09-10,,Pass,,,,Patrick Wood
+06762515:2026-09-10:1,06762515,2026-09-10,,Pass,,,,Patrick Wood
+06762516:2026-09-10:0,06762516,2026-09-10,,Pass,,,,Patrick Wood
+06762516:2026-09-10:1,06762516,2026-09-10,,Pass,,,,Patrick Wood
+06762518:2026-09-10:0,06762518,2026-09-10,,Pass,,,,Patrick Wood
+06762518:2026-09-10:1,06762518,2026-09-10,,Pass,,,,Patrick Wood
+06762593:2026-09-10:0,06762593,2026-09-10,,Pass,,,,Usman Javaid
 1:2024-02-29:0,1,2024-02-29,,Pass,6.0,,,Rochelle Veloso
 1:2024-03-19:0,1,2024-03-19,,Pass,,,,Christina Lee
 1:2024-07-26:0,1,2024-07-26,,Pass,,,,Rochelle Veloso
@@ -6095,6 +6180,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 100213:2025-03-06:0,100213,2025-03-06,Reinspection,Conditional Pass,,,,William Bajjalieh
 100213:2025-03-11:0,100213,2025-03-11,Reinspection,Pass,,,,William Bajjalieh
 100213:2026-03-24:0,100213,2026-03-24,,Pass,5.0,,,Thuan  Tieu
+100213:2026-09-10:0,100213,2026-09-10,,Pass,6.0,,,Thuan  Tieu
 100238:2024-01-31:0,100238,2024-01-31,Routine,Pass,2.0,,,Katie Dea
 100238:2024-12-10:0,100238,2024-12-10,Foodborne Illness,Pass,,,,Luz Brown
 100238:2024-12-10:1,100238,2024-12-10,Routine,Pass,1.0,,,Luz Brown
@@ -6350,6 +6436,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 101501:2025-01-27:0,101501,2025-01-27,Routine,Pass,1.0,,,Farhan Khan
 101505:2025-06-27:0,101505,2025-06-27,,Pass,,,,Patrick Wood
 101505:2026-08-20:0,101505,2026-08-20,,Pass,,,,Patrick Wood
+101505:2026-09-02:0,101505,2026-09-02,,Pass,,,,Patrick Wood
 10161:2024-09-16:0,10161,2024-09-16,Routine,Pass,,,,Danny Lee
 101661:2025-05-23:0,101661,2025-05-23,Routine,Pass,1.0,,,Kyle Chan
 101662:2025-04-04:0,101662,2025-04-04,Routine,Closure,11.0,,,Jessica Jang
@@ -6429,6 +6516,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 101853:2026-02-19:0,101853,2026-02-19,,Pass,4.0,,,Katherine Tuazon
 101891:2024-09-25:0,101891,2024-09-25,Routine,Pass,7.0,,,Sophia Huie
 101891:2024-10-09:0,101891,2024-10-09,Reinspection,Pass,2.0,,,Sophia Huie
+101891:2026-09-01:0,101891,2026-09-01,,Pass,6.0,,,Michael Mooney
 101907:2025-05-22:0,101907,2025-05-22,Routine,Pass,2.0,,,Danny Lee
 101907:2026-04-22:0,101907,2026-04-22,,Pass,,,,Sophia Huie
 101909:2025-01-02:0,101909,2025-01-02,Routine,Pass,1.0,,,Tiombe Wiley
@@ -6616,6 +6704,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 10283:2025-01-08:0,10283,2025-01-08,Reinspection,Pass,,,,William Bajjalieh
 102830:2024-03-06:0,102830,2024-03-06,Routine,Pass,4.0,,,John Castelli
 102830:2025-03-20:0,102830,2025-03-20,Routine,Pass,1.0,,,William Bajjalieh
+102831:2026-09-01:0,102831,2026-09-01,,Pass,7.0,,,Sojeatta Khim
 102839:2024-01-09:0,102839,2024-01-09,Routine,Pass,1.0,,,William Bajjalieh
 102839:2025-04-09:0,102839,2025-04-09,Routine,Pass,7.0,,,William Bajjalieh
 102839:2025-04-16:0,102839,2025-04-16,Reinspection,Pass,,,,William Bajjalieh
@@ -6688,6 +6777,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 103073:2026-06-16:0,103073,2026-06-16,,Pass,,,,Usman Javaid
 103136:2025-09-09:0,103136,2025-09-09,,Pass,3.0,,,Kyle Chan
 103137:2024-11-14:0,103137,2024-11-14,Routine,Pass,,,,Amy Johnson
+103137:2026-09-10:0,103137,2026-09-10,,Pass,,,,Usman Javaid
+103137:2026-09-10:1,103137,2026-09-10,,Pass,3.0,,,Usman Javaid
 103170:2024-03-22:0,103170,2024-03-22,Routine,Pass,2.0,,,Amy Johnson
 103171:2024-04-08:0,103171,2024-04-08,Routine,Pass,3.0,,,Sophia Huie
 103171:2024-04-15:0,103171,2024-04-15,Reinspection,Pass,,,,Sophia Huie
@@ -6859,6 +6950,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 103761:2025-01-16:0,103761,2025-01-16,,Pass,,,,Rochelle Veloso
 103761:2025-04-22:0,103761,2025-04-22,,Pass,,,,Luz Brown
 103771:2025-09-24:0,103771,2025-09-24,,Pass,5.0,,,Michael Mooney
+103771:2026-09-10:0,103771,2026-09-10,,Pass,1.0,,,Michael Mooney
 103772:2024-01-02:0,103772,2024-01-02,Site Visit,Pass,,,,Joanna Huber
 103774:2024-03-11:0,103774,2024-03-11,Routine,Closure,7.0,,,Joanna Huber
 103774:2024-03-12:0,103774,2024-03-12,Reinspection,Pass,3.0,,,Joanna Huber
@@ -7203,6 +7295,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 105725:2025-01-08:0,105725,2025-01-08,Reinspection,Conditional Pass,,,,Philips Ossai
 105725:2026-02-11:0,105725,2026-02-11,,Conditional Pass,9.0,,,Lucas  Willis
 105725:2026-02-19:0,105725,2026-02-19,,Pass,5.0,,,Lucas  Willis
+105725:2026-09-01:0,105725,2026-09-01,,Pass,1.0,,,Lucas  Willis
 105726:2024-10-09:0,105726,2024-10-09,Routine,Pass,2.0,,,Maribel Rodriguez
 105727:2024-03-13:0,105727,2024-03-13,Complaint (I),Pass,,,,Carlos Barragan
 105727:2024-03-13:1,105727,2024-03-13,Routine,Closure,17.0,,,Carlos Barragan
@@ -7283,6 +7376,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 106326:2024-09-03:0,106326,2024-09-03,Routine,Pass,2.0,,,Christina Lee
 106326:2025-05-28:0,106326,2025-05-28,Routine,Pass,,,,Michael Mooney
 106333:2024-08-21:0,106333,2024-08-21,Routine,Pass,1.0,,,William Bajjalieh
+106333:2026-09-09:0,106333,2026-09-09,,Pass,4.0,,,Jessica Jang
 106334:2024-04-17:0,106334,2024-04-17,Routine,Pass,3.0,,,Patrick Wood
 106334:2024-11-06:0,106334,2024-11-06,Routine,Pass,1.0,,,Patrick Wood
 106334:2025-05-21:0,106334,2025-05-21,Routine,Pass,3.0,,,Roy Bwogi
@@ -7298,6 +7392,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 106406:2024-12-02:0,106406,2024-12-02,Routine,Pass,4.0,,,Michael Mooney
 106426:2025-03-24:0,106426,2025-03-24,Routine,Pass,,,,Roy Bwogi
 106426:2026-02-11:0,106426,2026-02-11,,Pass,,,,Roy Bwogi
+106426:2026-09-15:0,106426,2026-09-15,,Pass,,,,Roy Bwogi
 106438:2024-04-30:0,106438,2024-04-30,Routine,Pass,3.0,,,Farhan Khan
 106438:2025-02-04:0,106438,2025-02-04,Routine,Pass,1.0,,,Farhan Khan
 106438:2025-02-05:0,106438,2025-02-05,Reinspection,Pass,,,,Farhan Khan
@@ -7869,6 +7964,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 110323:2024-03-26:0,110323,2024-03-26,Structural,,1.0,,,Christina Lee
 110323:2025-03-18:0,110323,2025-03-18,Structural,,,,,Luz Brown
 110340:2024-10-08:0,110340,2024-10-08,Routine,Pass,3.0,,,Sophia Huie
+110340:2026-09-02:0,110340,2026-09-02,,Pass,,,,Alyssa  Manzano
 110341:2024-04-15:0,110341,2024-04-15,Routine,Pass,7.0,,,Danny Lee
 110342:2024-04-03:0,110342,2024-04-03,Complaint (I),Pass,,,,Zack Parsons
 110342:2024-04-03:1,110342,2024-04-03,Routine,Pass,5.0,,,Zack Parsons
@@ -8161,6 +8257,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 111701:2024-07-19:0,111701,2024-07-19,Reinspection,Pass,2.0,,,John  Wells
 111701:2024-07-26:0,111701,2024-07-26,Reinspection,Pass,1.0,,,John  Wells
 111701:2025-08-22:0,111701,2025-08-22,,Pass,5.0,,,John  Wells
+111701:2026-09-08:0,111701,2026-09-08,,Pass,2.0,,,John  Wells
 111703:2024-06-06:0,111703,2024-06-06,Routine,Pass,3.0,,,Tiombe Wiley
 111703:2025-06-24:0,111703,2025-06-24,Routine,Pass,2.0,,,Tiombe Wiley
 111708:2025-03-17:0,111708,2025-03-17,Structural,,,,,Alyssa  Manzano
@@ -8209,6 +8306,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 111855:2025-04-15:0,111855,2025-04-15,Routine,Conditional Pass,7.0,,,Sophia Huie
 111855:2025-04-24:0,111855,2025-04-24,Reinspection,Pass,3.0,,,Sophia Huie
 111855:2025-05-15:0,111855,2025-05-15,Site Visit,Pass,,,,Rochelle Veloso
+111855:2026-09-02:0,111855,2026-09-02,,Pass,,,,Sophia Huie
 111870:2024-10-02:0,111870,2024-10-02,Routine,Conditional Pass,8.0,,,Katie Dea
 111870:2024-10-09:0,111870,2024-10-09,Reinspection,Pass,6.0,,,Katie Dea
 111870:2024-10-21:0,111870,2024-10-21,Reinspection,Pass,5.0,,,Katie Dea
@@ -8396,6 +8494,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 112642:2024-04-25:0,112642,2024-04-25,Routine,Pass,2.0,,,Amy Johnson
 112642:2024-11-08:0,112642,2024-11-08,Routine,Pass,,,,Amy Johnson
 112642:2025-04-29:0,112642,2025-04-29,Routine,Pass,1.0,,,Aron Wong
+112642:2026-09-14:0,112642,2026-09-14,,Pass,1.0,,,Usman Javaid
 112644:2025-02-21:0,112644,2025-02-21,Routine,Pass,1.0,,,Tiombe Wiley
 112650:2024-06-23:0,112650,2024-06-23,Routine,Pass,1.0,,,Zack Parsons
 112679:2024-01-22:0,112679,2024-01-22,Complaint (I),Pass,,,,Danny Lee
@@ -8544,6 +8643,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 113227:2024-04-17:1,113227,2024-04-17,Reinspection,Pass,,,,Amy Johnson
 113227:2024-10-15:0,113227,2024-10-15,Routine,Pass,5.0,,,Amy Johnson
 113227:2026-01-12:0,113227,2026-01-12,,Closure,11.0,,,Usman Javaid
+113227:2026-09-03:0,113227,2026-09-03,,Pass,,,,Usman Javaid
 113229:2025-01-22:0,113229,2025-01-22,Routine,Pass,1.0,,,Amelia Castelli
 113232:2025-04-25:0,113232,2025-04-25,Routine,Conditional Pass,9.0,,,Patrick Wood
 113232:2025-05-13:0,113232,2025-05-13,Reinspection,Pass,6.0,,,Patrick Wood
@@ -8635,6 +8735,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 114631:2024-10-02:0,114631,2024-10-02,Reinspection,Pass,5.0,,,John  Wells
 114631:2024-10-25:0,114631,2024-10-25,Reinspection,Pass,2.0,,,John  Wells
 114631:2025-04-23:0,114631,2025-04-23,Routine,Pass,4.0,,,John  Wells
+114631:2026-09-09:0,114631,2026-09-09,,Pass,4.0,,,John  Wells
 114692:2024-02-26:0,114692,2024-02-26,Routine,Pass,,,,Farhan Khan
 114692:2024-08-28:0,114692,2024-08-28,,Pass,3.0,,,Rochelle Veloso
 114692:2025-05-28:0,114692,2025-05-28,Routine,Pass,,,,Patrick Wood
@@ -8863,6 +8964,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 115466:2024-01-09:0,115466,2024-01-09,Reinspection,Pass,1.0,,,William Bajjalieh
 115466:2024-12-03:0,115466,2024-12-03,Routine,Pass,3.0,,,William Bajjalieh
 115466:2024-12-26:0,115466,2024-12-26,Reinspection,Pass,1.0,,,William Bajjalieh
+115466:2026-09-04:0,115466,2026-09-04,,Pass,,,,Thuan  Tieu
 115467:2025-04-14:0,115467,2025-04-14,Routine,Pass,3.0,,,Danny Lee
 115467:2026-05-13:0,115467,2026-05-13,,Pass,,,,Sophia Huie
 115469:2025-08-11:0,115469,2025-08-11,,Pass,4.0,,,Sojeatta Khim
@@ -8924,6 +9026,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 115676:2024-09-16:0,115676,2024-09-16,Reinspection,Pass,1.0,,,Michael Mooney
 115676:2024-10-28:0,115676,2024-10-28,Routine,Pass,3.0,,,Michael Mooney
 115676:2026-02-02:0,115676,2026-02-02,,Pass,3.0,,,Michael Mooney
+115676:2026-09-14:0,115676,2026-09-14,,Closure,6.0,,,Michael Mooney
+11570:2026-09-02:0,11570,2026-09-02,,Pass,2.0,,,Lucas  Willis
 115702:2024-07-31:0,115702,2024-07-31,Routine,Pass,7.0,,,Katie Dea
 115702:2024-08-14:0,115702,2024-08-14,Reinspection,Pass,1.0,,,Katie Dea
 115705:2025-05-01:0,115705,2025-05-01,Site Visit,Pass,,,,Sophia Huie
@@ -9172,7 +9276,9 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 116654:2025-05-16:0,116654,2025-05-16,Reinspection,Pass,4.0,,,Roy Bwogi
 116654:2025-10-24:0,116654,2025-10-24,,Pass,1.0,,,Roy Bwogi
 116654:2026-03-19:0,116654,2026-03-19,,Pass,3.0,,,Roy Bwogi
+116654:2026-09-15:0,116654,2026-09-15,,Pass,5.0,,,Roy Bwogi
 116688:2026-02-02:0,116688,2026-02-02,,Pass,2.0,,,Sojeatta Khim
+116688:2026-09-10:0,116688,2026-09-10,,Pass,3.0,,,Sojeatta Khim
 116691:2024-10-29:0,116691,2024-10-29,Routine,Pass,,,,Michael Mooney
 116692:2024-10-29:0,116692,2024-10-29,Routine,Conditional Pass,1.0,,,Michael Mooney
 116692:2024-11-21:0,116692,2024-11-21,Reinspection,Pass,,,,Michael Mooney
@@ -9357,6 +9463,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 117297:2024-10-30:0,117297,2024-10-30,Routine,Pass,2.0,,,Kristine Der
 117298:2024-10-30:0,117298,2024-10-30,Routine,Pass,7.0,,,Amy Johnson
 117298:2026-03-09:0,117298,2026-03-09,,Pass,2.0,,,Usman Javaid
+117298:2026-08-31:0,117298,2026-08-31,,Pass,1.0,,,Usman Javaid
 117308:2024-03-25:0,117308,2024-03-25,Routine,Pass,1.0,,,Farhan Khan
 117309:2025-01-17:0,117309,2025-01-17,Reinspection,Pass,,,,Luz Brown
 117309:2025-01-17:1,117309,2025-01-17,Routine,Closure,6.0,,,Luz Brown
@@ -9692,6 +9799,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 118641:2025-05-22:0,118641,2025-05-22,Site Visit,,,,,Rochelle Veloso
 118642:2024-02-08:0,118642,2024-02-08,Routine,Pass,,,,Amy Johnson
 118642:2024-08-08:0,118642,2024-08-08,Routine,Pass,4.0,,,Amy Johnson
+118642:2026-09-10:0,118642,2026-09-10,,Pass,1.0,,,Usman Javaid
 118643:2026-02-04:0,118643,2026-02-04,,Pass,5.0,,,Sojeatta Khim
 118644:2025-01-16:0,118644,2025-01-16,,Pass,,,,Joanna Huber
 118644:2025-02-04:0,118644,2025-02-04,,,,,,Luz Brown
@@ -9962,6 +10070,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 120894:2025-01-22:0,120894,2025-01-22,Routine,Pass,2.0,,,Katie Dea
 120894:2025-01-31:0,120894,2025-01-31,Reinspection,Pass,,,,Alyssa  Manzano
 120894:2026-01-14:0,120894,2026-01-14,,Pass,7.0,,,Katie Dea
+120894:2026-09-08:0,120894,2026-09-08,,Pass,9.0,,,Katie Dea
 121069:2025-03-24:0,121069,2025-03-24,Routine,Pass,1.0,,,Alyssa  Manzano
 12122:2024-05-07:0,12122,2024-05-07,Routine,Pass,5.0,,,John Castelli
 12122:2025-06-10:0,12122,2025-06-10,Routine,Pass,6.0,,,William Bajjalieh
@@ -10111,6 +10220,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 15200:2024-12-11:0,15200,2024-12-11,Routine,Pass,3.0,,,Maribel Rodriguez
 1523:2024-09-23:0,1523,2024-09-23,Routine,Pass,2.0,,,Sophia Huie
 1523:2024-09-30:0,1523,2024-09-30,Reinspection,Pass,,,,Sophia Huie
+1523:2026-09-09:0,1523,2026-09-09,,Pass,1.0,,,Sophia Huie
 15238:2024-01-02:0,15238,2024-01-02,Routine,Pass,,,,Danny Lee
 15280:2024-02-09:0,15280,2024-02-09,Routine,Pass,2.0,,,Amy Johnson
 15327:2024-01-08:0,15327,2024-01-08,Routine,Pass,1.0,,,Sophia Huie
@@ -10145,6 +10255,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 1555:2024-08-21:0,1555,2024-08-21,Reinspection,Pass,2.0,,,John  Wells
 1555:2025-04-08:0,1555,2025-04-08,Routine,Pass,5.0,,,John  Wells
 1555:2026-01-27:0,1555,2026-01-27,,Pass,6.0,,,John  Wells
+1555:2026-09-08:0,1555,2026-09-08,,Pass,4.0,,,John  Wells
 15570:2026-03-09:0,15570,2026-03-09,,Pass,4.0,,,Michael Mooney
 15571:2024-12-03:0,15571,2024-12-03,Routine,Pass,2.0,,,Maribel Rodriguez
 15571:2024-12-31:0,15571,2024-12-31,Reinspection,Pass,,,,Maribel Rodriguez
@@ -10219,6 +10330,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 16644:2025-06-05:0,16644,2025-06-05,Routine,Pass,5.0,,,Alyssa  Manzano
 16657:2024-09-16:0,16657,2024-09-16,Routine,Pass,1.0,,,Michael Mooney
 16657:2025-02-20:0,16657,2025-02-20,Complaint (I),Pass,,,,Michael Mooney
+16657:2026-09-15:0,16657,2026-09-15,,Pass,4.0,,,John  Wells
 1672:2025-05-06:0,1672,2025-05-06,Routine,Pass,1.0,,,Patrick Wood
 1692:2024-01-10:0,1692,2024-01-10,Routine,Pass,2.0,,,Amy Johnson
 1692:2026-04-08:0,1692,2026-04-08,,Pass,,,,Usman Javaid
@@ -10346,6 +10458,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 18284:2025-05-29:0,18284,2025-05-29,Routine,Pass,3.0,,,Sophia Huie
 18286:2025-09-22:0,18286,2025-09-22,,Pass,,,,Sophia Huie
 18286:2026-05-04:0,18286,2026-05-04,,Pass,,,,Sophia Huie
+18305:2026-09-08:0,18305,2026-09-08,,Pass,,,,Lucas  Willis
 18307:2024-08-16:0,18307,2024-08-16,Routine,Pass,1.0,,,William Bajjalieh
 18307:2026-04-08:0,18307,2026-04-08,,Pass,,,,Thuan  Tieu
 18308:2024-01-04:0,18308,2024-01-04,Routine,Pass,2.0,,,Joanna Huber
@@ -10816,6 +10929,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 23270:2025-02-05:0,23270,2025-02-05,Routine,Pass,,,,Larry Kessler
 23285:2025-04-18:0,23285,2025-04-18,Routine,Pass,,,,Amelia Castelli
 23286:2025-11-07:0,23286,2025-11-07,,Pass,2.0,,,Lucas  Willis
+23286:2026-09-10:0,23286,2026-09-10,,Pass,1.0,,,Lucas  Willis
 23291:2024-07-02:0,23291,2024-07-02,Routine,Pass,,,,William Bajjalieh
 23291:2026-08-04:0,23291,2026-08-04,,Pass,1.0,,,Jessica Jang
 23323:2024-02-01:0,23323,2024-02-01,Routine,Pass,2.0,,,William Bajjalieh
@@ -10823,6 +10937,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 23323:2024-08-27:0,23323,2024-08-27,Complaint (I),Pass,,,,William Bajjalieh
 23323:2024-08-27:1,23323,2024-08-27,Routine,Pass,1.0,,,William Bajjalieh
 23323:2026-08-21:0,23323,2026-08-21,,Pass,,,,Thuan  Tieu
+23323:2026-09-08:0,23323,2026-09-08,,Pass,1.0,,,Thuan  Tieu
 23334:2025-02-11:0,23334,2025-02-11,Routine,Pass,3.0,,,Sharon Aguila-Leonard
 23334:2025-02-18:0,23334,2025-02-18,Reinspection,Pass,,,,Sharon Aguila-Leonard
 23440:2024-01-02:0,23440,2024-01-02,Reinspection,Pass,2.0,,,William Bajjalieh
@@ -10855,6 +10970,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 23648:2025-12-02:0,23648,2025-12-02,,Pass,1.0,,,Patrick Wood
 23648:2026-01-06:0,23648,2026-01-06,,Pass,1.0,,,Patrick Wood
 23648:2026-01-27:0,23648,2026-01-27,,Pass,,,,Patrick Wood
+23648:2026-09-01:0,23648,2026-09-01,,Pass,,,,Patrick Wood
 23655:2025-05-14:0,23655,2025-05-14,Routine,Pass,1.0,,,Patrick Wood
 23655:2025-06-06:0,23655,2025-06-06,Reinspection,Pass,1.0,,,Patrick Wood
 23655:2025-12-02:0,23655,2025-12-02,,Pass,3.0,,,Patrick Wood
@@ -10862,6 +10978,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 23655:2026-02-03:0,23655,2026-02-03,,Pass,,,,Patrick Wood
 23657:2025-05-14:0,23657,2025-05-14,Routine,Pass,1.0,,,Patrick Wood
 23657:2025-12-10:0,23657,2025-12-10,,Pass,1.0,,,Patrick Wood
+23657:2026-09-01:0,23657,2026-09-01,,Pass,,,,Patrick Wood
 23664:2025-08-06:0,23664,2025-08-06,,Pass,4.0,,,Roy Bwogi
 23687:2026-01-22:0,23687,2026-01-22,,Closure,8.0,,,Sojeatta Khim
 2369:2024-07-26:0,2369,2024-07-26,Routine,Pass,3.0,,,Tiombe Wiley
@@ -10871,6 +10988,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 23695:2024-12-18:0,23695,2024-12-18,Reinspection,Closure,2.0,,,Patrick Wood
 23695:2024-12-20:0,23695,2024-12-20,Reinspection,Conditional Pass,2.0,,,Patrick Wood
 23695:2025-07-22:0,23695,2025-07-22,,Pass,2.0,,,Roy Bwogi
+23695:2026-09-11:0,23695,2026-09-11,,Pass,8.0,,,Montre  Tieu
 23715:2025-10-22:0,23715,2025-10-22,,Pass,8.0,,,John  Wells
 23725:2024-02-28:0,23725,2024-02-28,Routine,Pass,7.0,,,Katie Dea
 23725:2024-03-20:0,23725,2024-03-20,Reinspection,Pass,1.0,,,Katie Dea
@@ -10886,6 +11004,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 23838:2026-02-12:0,23838,2026-02-12,,Pass,,,,Zack Parsons
 23838:2026-05-01:0,23838,2026-05-01,,Pass,7.0,,,Zack Parsons
 23926:2024-10-16:0,23926,2024-10-16,Routine,Pass,2.0,,,Patrick Wood
+23926:2026-09-08:0,23926,2026-09-08,,Pass,1.0,,,Patrick Wood
 24091:2024-08-08:0,24091,2024-08-08,Routine,Pass,4.0,,,Farhan Khan
 24259:2024-03-28:0,24259,2024-03-28,Complaint (I),Pass,,,,Zack Parsons
 24259:2024-10-22:0,24259,2024-10-22,Routine,Pass,,,,Patrick Wood
@@ -11221,6 +11340,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 27377:2024-07-15:0,27377,2024-07-15,Routine,Pass,9.0,,,Danny Lee
 27377:2024-07-22:0,27377,2024-07-22,Reinspection,Pass,,,,Danny Lee
 27377:2026-01-21:0,27377,2026-01-21,,Pass,5.0,,,Montre  Tieu
+27377:2026-09-09:0,27377,2026-09-09,,Pass,,,,Montre  Tieu
 27382:2024-09-26:0,27382,2024-09-26,Routine,Pass,2.0,,,Katie Dea
 27417:2025-02-12:0,27417,2025-02-12,Routine,Pass,,,,Tiombe Wiley
 27427:2024-08-20:0,27427,2024-08-20,Complaint (I),Pass,,,,Farhan Khan
@@ -11297,6 +11417,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 27957:2025-05-30:0,27957,2025-05-30,Routine,Pass,3.0,,,Tiombe Wiley
 27982:2024-11-07:0,27982,2024-11-07,Routine,Pass,1.0,,,Luz Brown
 27992:2024-08-16:0,27992,2024-08-16,Routine,Pass,1.0,,,William Bajjalieh
+27992:2026-09-04:0,27992,2026-09-04,,Pass,,,,Thuan  Tieu
 28015:2024-11-18:0,28015,2024-11-18,Routine,Closure,3.0,,,Carlos Barragan
 28015:2024-11-20:0,28015,2024-11-20,Reinspection,Pass,,,,Katie Dea
 28040:2025-01-23:0,28040,2025-01-23,Routine,Pass,3.0,,,William Bajjalieh
@@ -11408,6 +11529,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 28884:2026-02-19:0,28884,2026-02-19,,Pass,2.0,,,Usman Javaid
 28886:2026-03-05:0,28886,2026-03-05,,Pass,5.0,,,Lucas  Willis
 28886:2026-03-12:0,28886,2026-03-12,,Pass,,,,Lucas  Willis
+28886:2026-09-01:0,28886,2026-09-01,,Pass,3.0,,,Lucas  Willis
 28905:2024-06-24:0,28905,2024-06-24,Complaint (I),Pass,,,,Kristine Der
 28905:2024-06-24:1,28905,2024-06-24,Routine,Conditional Pass,4.0,,,Kristine Der
 28905:2024-07-09:0,28905,2024-07-09,Complaint (R),Pass,,,,Kristine Der
@@ -11438,6 +11560,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 29047:2025-08-27:0,29047,2025-08-27,,Pass,11.0,,,John  Wells
 29047:2025-12-12:0,29047,2025-12-12,,Pass,2.0,,,John  Wells
 29047:2026-03-26:0,29047,2026-03-26,,Pass,7.0,,,John  Wells
+29047:2026-09-15:0,29047,2026-09-15,,Pass,7.0,,,John  Wells
 29048:2024-11-08:0,29048,2024-11-08,Routine,Pass,,,,William Bajjalieh
 29052:2024-10-21:0,29052,2024-10-21,Routine,Pass,5.0,,,Kristine Der
 29052:2024-10-29:0,29052,2024-10-29,Reinspection,Pass,,,,Kristine Der
@@ -11476,6 +11599,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 29241:2025-05-20:0,29241,2025-05-20,Complaint (I),Pass,,,,William Bajjalieh
 29241:2025-05-20:1,29241,2025-05-20,Routine,Conditional Pass,8.0,,,William Bajjalieh
 29241:2025-05-27:0,29241,2025-05-27,Reinspection,Pass,2.0,,,William Bajjalieh
+29241:2026-09-08:0,29241,2026-09-08,,Pass,7.0,,,Thuan  Tieu
+29241:2026-09-15:0,29241,2026-09-15,,Pass,1.0,,,Thuan  Tieu
 29243:2025-01-21:0,29243,2025-01-21,Routine,Pass,6.0,,,Michael Mooney
 29252:2024-07-09:0,29252,2024-07-09,Routine,Pass,4.0,,,Tiombe Wiley
 29252:2025-05-13:0,29252,2025-05-13,Routine,Pass,,,,Tiombe Wiley
@@ -11679,6 +11804,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 30278:2024-12-05:0,30278,2024-12-05,Routine,Pass,3.0,,,Michael Mooney
 3029:2024-10-10:0,3029,2024-10-10,Routine,Pass,3.0,,,William Bajjalieh
 3029:2024-10-18:0,3029,2024-10-18,Reinspection,Pass,,,,William Bajjalieh
+3029:2026-09-10:0,3029,2026-09-10,,Pass,,,,Thuan  Tieu
 30297:2025-04-15:0,30297,2025-04-15,Routine,Pass,,,,Alyssa  Manzano
 30306:2025-05-02:0,30306,2025-05-02,Routine,Pass,,,,Amy Johnson
 30313:2026-04-30:0,30313,2026-04-30,,Pass,4.0,,,Lucas  Willis
@@ -11737,6 +11863,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 30586:2026-01-13:0,30586,2026-01-13,,Pass,2.0,,,John  Wells
 30594:2024-04-11:0,30594,2024-04-11,Routine,Pass,2.0,,,Danny Lee
 30594:2024-05-21:0,30594,2024-05-21,Complaint (I),Pass,,,,Jesus Zapien
+30594:2026-09-14:0,30594,2026-09-14,,Pass,,,,Usman Javaid
 30595:2024-04-11:0,30595,2024-04-11,Routine,Pass,,,,Danny Lee
 30596:2024-04-11:0,30596,2024-04-11,Routine,Pass,,,,Danny Lee
 30596:2026-01-26:0,30596,2026-01-26,,Pass,,,,Usman Javaid
@@ -11959,6 +12086,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 31189:2025-07-09:0,31189,2025-07-09,,Pass,,,,William Bajjalieh
 31189:2025-08-20:0,31189,2025-08-20,,Closure,5.0,,,William Bajjalieh
 31189:2025-11-12:0,31189,2025-11-12,,Closure,3.0,,,William Bajjalieh
+31189:2026-09-02:0,31189,2026-09-02,,Pass,5.0,,,Thuan  Tieu
 31199:2024-09-10:0,31199,2024-09-10,Routine,Pass,2.0,,,Luz Brown
 31199:2024-10-01:0,31199,2024-10-01,Reinspection,Pass,,,,Luz Brown
 31199:2026-02-17:0,31199,2026-02-17,,Pass,4.0,,,Katherine Tuazon
@@ -12180,6 +12308,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 32207:2025-03-25:0,32207,2025-03-25,Routine,Pass,,,,Sophia Huie
 32207:2025-12-03:0,32207,2025-12-03,,Pass,2.0,,,Sophia Huie
 32207:2025-12-10:0,32207,2025-12-10,,Pass,,,,Sophia Huie
+32207:2026-09-02:0,32207,2026-09-02,,Pass,1.0,,,Sophia Huie
 32208:2025-01-21:0,32208,2025-01-21,Routine,Pass,2.0,,,Kyle Chan
 32208:2025-05-14:0,32208,2025-05-14,Site Visit,,,,,Rochelle Veloso
 32210:2024-02-21:0,32210,2024-02-21,Routine,Pass,1.0,,,Kyle Chan
@@ -12229,6 +12358,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 32340:2025-02-26:0,32340,2025-02-26,Routine,Pass,7.0,,,Michael Mooney
 32340:2025-09-02:0,32340,2025-09-02,,Pass,9.0,,,Michael Mooney
 32340:2026-04-28:0,32340,2026-04-28,,Pass,4.0,,,Michael Mooney
+32340:2026-09-09:0,32340,2026-09-09,,Pass,,,,Michael Mooney
 32346:2024-02-27:0,32346,2024-02-27,Routine,Pass,1.0,,,Sophia Huie
 32346:2024-03-06:0,32346,2024-03-06,Reinspection,Pass,,,,Sophia Huie
 32346:2024-09-10:0,32346,2024-09-10,Routine,Pass,6.0,,,Michael Mooney
@@ -12321,6 +12451,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 32716:2025-05-05:0,32716,2025-05-05,Routine,Pass,5.0,,,Michael Mooney
 32716:2026-01-08:0,32716,2026-01-08,,Pass,6.0,,,Michael Mooney
 32716:2026-01-29:0,32716,2026-01-29,,Pass,4.0,,,Michael Mooney
+32716:2026-09-02:0,32716,2026-09-02,,Pass,9.0,,,Michael Mooney
 32725:2025-02-20:0,32725,2025-02-20,Routine,Pass,2.0,,,Kyle Chan
 32740:2024-03-14:0,32740,2024-03-14,Routine,Pass,2.0,,,Joanna Huber
 32740:2024-03-21:0,32740,2024-03-21,Reinspection,Pass,1.0,,,Joanna Huber
@@ -12466,6 +12597,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 33404:2024-01-03:0,33404,2024-01-03,Routine,Pass,,,,Amy Johnson
 33404:2024-07-03:0,33404,2024-07-03,Routine,Pass,1.0,,,Amy Johnson
 33404:2025-07-30:0,33404,2025-07-30,,Pass,4.0,,,Jesus Zapien
+33404:2026-08-31:0,33404,2026-08-31,,Pass,2.0,,,Usman Javaid
 33442:2025-02-12:0,33442,2025-02-12,Routine,Pass,13.0,,,Alyssa  Manzano
 33448:2025-05-06:0,33448,2025-05-06,Routine,Pass,1.0,,,Aron Wong
 33448:2026-05-06:0,33448,2026-05-06,,Pass,1.0,,,Usman Javaid
@@ -12484,6 +12616,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 33527:2024-09-25:0,33527,2024-09-25,Routine,Conditional Pass,5.0,,,William Bajjalieh
 33527:2024-10-08:0,33527,2024-10-08,Reinspection,Pass,,,,William Bajjalieh
 33527:2026-08-28:0,33527,2026-08-28,,Pass,5.0,,,Thuan  Tieu
+33527:2026-09-04:0,33527,2026-09-04,,Pass,,,,Thuan  Tieu
 33599:2024-03-20:0,33599,2024-03-20,Complaint (I),Pass,,,,Maribel Rodriguez
 33599:2024-03-20:1,33599,2024-03-20,Routine,Pass,3.0,,,Maribel Rodriguez
 33599:2024-11-19:0,33599,2024-11-19,Routine,Pass,2.0,,,Tiombe Wiley
@@ -12926,6 +13059,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 51054:2025-04-10:0,51054,2025-04-10,Complaint (R),Pass,,,,Sharon Aguila-Leonard
 51054:2025-05-19:0,51054,2025-05-19,Routine,Pass,16.0,,,Jessica Jang
 51054:2025-06-20:0,51054,2025-06-20,Reinspection,Pass,4.0,,,Jessica Jang
+51054:2026-09-10:0,51054,2026-09-10,,Pass,6.0,,,Jessica Jang
 51055:2024-01-31:0,51055,2024-01-31,Complaint (I),Pass,1.0,,,Danny Lee
 51055:2024-01-31:1,51055,2024-01-31,Routine,Pass,6.0,,,Danny Lee
 51055:2024-06-11:0,51055,2024-06-11,Complaint (I),Pass,,,,Amy Johnson
@@ -12951,6 +13085,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 51115:2025-07-01:0,51115,2025-07-01,,Pass,1.0,,,Patrick Wood
 51115:2026-01-13:0,51115,2026-01-13,,Pass,3.0,,,Patrick Wood
 51115:2026-07-21:0,51115,2026-07-21,,Pass,3.0,,,Patrick Wood
+51131:2026-09-10:0,51131,2026-09-10,,Pass,4.0,,,Carlos Barragan
+51131:2026-09-10:1,51131,2026-09-10,,Pass,,,,Carlos Barragan
 51135:2024-08-08:0,51135,2024-08-08,Complaint (I),Pass,,,,Luz Brown
 51135:2024-08-08:1,51135,2024-08-08,Reinspection,Pass,2.0,,,Luz Brown
 51135:2025-04-03:0,51135,2025-04-03,Complaint (I),Pass,,,,Maribel Rodriguez
@@ -13091,6 +13227,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 51768:2025-08-06:0,51768,2025-08-06,,Pass,1.0,,,John  Wells
 51768:2025-08-22:0,51768,2025-08-22,,Pass,,,,John  Wells
 51768:2026-02-19:0,51768,2026-02-19,,Pass,5.0,,,John  Wells
+51768:2026-09-02:0,51768,2026-09-02,,Pass,9.0,,,John  Wells
 51771:2024-02-08:0,51771,2024-02-08,Routine,Pass,1.0,,,Oneida Romero
 51771:2025-03-13:0,51771,2025-03-13,Routine,Pass,7.0,,,Jessica Jang
 51771:2025-04-17:0,51771,2025-04-17,Site Visit,Pass,,,,Amy Johnson
@@ -13169,6 +13306,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 51976:2025-05-23:1,51976,2025-05-23,Routine,Pass,2.0,,,Aron Wong
 51976:2026-02-23:0,51976,2026-02-23,,Pass,4.0,,,Usman Javaid
 51976:2026-08-24:0,51976,2026-08-24,,Pass,8.0,,,Usman Javaid
+51976:2026-09-03:0,51976,2026-09-03,,Pass,3.0,,,Usman Javaid
 51977:2025-02-06:0,51977,2025-02-06,Routine,Pass,,,,Jesus Zapien
 51984:2024-06-14:0,51984,2024-06-14,Routine,Conditional Pass,7.0,,,Tiombe Wiley
 51984:2024-06-21:0,51984,2024-06-21,Reinspection,Pass,2.0,,,Tiombe Wiley
@@ -13303,6 +13441,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 52918:2025-09-10:0,52918,2025-09-10,,Pass,1.0,,,Patrick Wood
 52918:2025-11-13:0,52918,2025-11-13,,Pass,,,,Patrick Wood
 52918:2026-03-04:0,52918,2026-03-04,,Pass,,,,Patrick Wood
+52918:2026-09-09:0,52918,2026-09-09,,Pass,,,,Patrick Wood
 52922:2024-10-23:0,52922,2024-10-23,Routine,Pass,5.0,,,Rochelle Veloso
 52929:2024-05-03:0,52929,2024-05-03,Routine,Pass,5.0,,,Zack Parsons
 52929:2024-12-11:0,52929,2024-12-11,Routine,Pass,4.0,,,Zack Parsons
@@ -13313,6 +13452,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 52953:2024-08-15:0,52953,2024-08-15,Routine,Pass,2.0,,,Patrick Wood
 52953:2025-05-29:0,52953,2025-05-29,Routine,Pass,11.0,,,Roy Bwogi
 52953:2025-06-20:0,52953,2025-06-20,Reinspection,Pass,7.0,,,Roy Bwogi
+52953:2026-09-16:0,52953,2026-09-16,,Pass,,,,Roy Bwogi
 52967:2025-11-04:0,52967,2025-11-04,,Pass,,,,Patrick Wood
 52967:2025-11-14:0,52967,2025-11-14,,Pass,,,,Patrick Wood
 52967:2025-11-21:0,52967,2025-11-21,,Pass,4.0,,,Patrick Wood
@@ -13330,6 +13470,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 52993:2024-07-31:0,52993,2024-07-31,Routine,Pass,,,,Patrick Wood
 53003:2024-07-31:0,53003,2024-07-31,Routine,Pass,8.0,,,Danny Lee
 53003:2026-01-21:0,53003,2026-01-21,,Pass,4.0,,,Montre  Tieu
+53003:2026-09-09:0,53003,2026-09-09,,Pass,1.0,,,Montre  Tieu
 53006:2024-09-24:0,53006,2024-09-24,Routine,Pass,5.0,,,Katie Dea
 53006:2024-09-30:0,53006,2024-09-30,Reinspection,Pass,1.0,,,Katie Dea
 53014:2024-09-25:0,53014,2024-09-25,Routine,Pass,11.0,,,Maribel Rodriguez
@@ -13813,6 +13954,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 64004:2024-10-08:0,64004,2024-10-08,Routine,Pass,9.0,,,Maribel Rodriguez
 64021:2024-02-27:0,64021,2024-02-27,Routine,Conditional Pass,7.0,,,Danny Lee
 64021:2024-03-12:0,64021,2024-03-12,Reinspection,Pass,,,,Danny Lee
+64021:2026-09-01:0,64021,2026-09-01,,Pass,6.0,,,Usman Javaid
 64067:2024-04-02:0,64067,2024-04-02,Routine,Pass,4.0,,,Danny Lee
 64076:2024-07-17:0,64076,2024-07-17,Routine,Pass,11.0,,,Katie Dea
 64076:2024-07-30:0,64076,2024-07-30,Reinspection,Pass,3.0,,,Katie Dea
@@ -13833,6 +13975,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 64176:2026-03-30:0,64176,2026-03-30,,Pass,4.0,,,Jessica Jang
 64195:2024-08-20:0,64195,2024-08-20,Routine,Pass,2.0,,,William Bajjalieh
 64195:2024-09-10:0,64195,2024-09-10,Reinspection,Pass,,,,William Bajjalieh
+64195:2026-09-02:0,64195,2026-09-02,,Pass,2.0,,,Thuan  Tieu
 6423:2025-01-29:0,6423,2025-01-29,Routine,Pass,,,,Larry Kessler
 64231:2024-02-27:0,64231,2024-02-27,Routine,Pass,4.0,,,Danny Lee
 64231:2026-06-11:0,64231,2026-06-11,,Pass,,,,Usman Javaid
@@ -13956,6 +14099,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 65377:2026-08-18:0,65377,2026-08-18,,Pass,1.0,,,Roy Bwogi
 65382:2025-05-08:0,65382,2025-05-08,Routine,Pass,1.0,,,Sharon Aguila-Leonard
 65382:2025-05-30:0,65382,2025-05-30,Reinspection,Pass,,,,Sharon Aguila-Leonard
+65382:2026-09-01:0,65382,2026-09-01,,Pass,,,,Sharon Aguila-Leonard
 65384:2024-05-14:0,65384,2024-05-14,Routine,Pass,3.0,,,Patrick Wood
 65384:2024-08-30:0,65384,2024-08-30,Complaint (I),Pass,4.0,,,Patrick Wood
 65384:2024-09-03:0,65384,2024-09-03,Complaint (R),Pass,3.0,,,Patrick Wood
@@ -14045,6 +14189,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 65893:2024-11-05:0,65893,2024-11-05,Routine,Pass,2.0,,,Abel Simon
 65893:2025-03-21:0,65893,2025-03-21,Routine,Pass,1.0,,,William Bajjalieh
 65893:2026-03-17:0,65893,2026-03-17,,Pass,,,,Thuan  Tieu
+65893:2026-09-15:0,65893,2026-09-15,,Pass,,,,Thuan  Tieu
 65896:2024-07-16:0,65896,2024-07-16,Routine,Pass,1.0,,,Farhan Khan
 65896:2025-03-26:0,65896,2025-03-26,Routine,Pass,5.0,,,Farhan Khan
 65901:2025-03-11:0,65901,2025-03-11,Routine,Pass,9.0,,,Alyssa  Manzano
@@ -14137,6 +14282,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 66900:2025-03-04:0,66900,2025-03-04,Routine,Closure,8.0,,,Maribel Rodriguez
 66900:2025-03-05:0,66900,2025-03-05,Reinspection,Pass,2.0,,,Maribel Rodriguez
 66900:2025-04-22:0,66900,2025-04-22,Reinspection,Pass,4.0,,,Maribel Rodriguez
+66900:2026-09-15:0,66900,2026-09-15,,Pass,4.0,,,Cristina Zepeda
 66901:2026-04-09:0,66901,2026-04-09,,Pass,2.0,,,Lucas  Willis
 66918:2024-07-16:0,66918,2024-07-16,Routine,Pass,,,,Farhan Khan
 66918:2025-04-08:0,66918,2025-04-08,Routine,Pass,,,,Farhan Khan
@@ -14155,6 +14301,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 66987:2024-11-25:0,66987,2024-11-25,Routine,Pass,4.0,,,Michael Mooney
 66987:2025-10-01:0,66987,2025-10-01,,Pass,5.0,,,Michael Mooney
 66987:2025-12-18:0,66987,2025-12-18,,Pass,5.0,,,Michael Mooney
+66987:2026-09-01:0,66987,2026-09-01,,Pass,4.0,,,Michael Mooney
 66999:2024-08-21:0,66999,2024-08-21,Routine,Pass,2.0,,,Amelia Castelli
 66999:2024-12-18:0,66999,2024-12-18,Routine,Pass,1.0,,,Amelia Castelli
 66999:2025-05-29:0,66999,2025-05-29,Complaint (I),Pass,,,,Amelia Castelli
@@ -14256,6 +14403,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 67828:2025-01-28:0,67828,2025-01-28,Reinspection,Pass,,,,Sharon Aguila-Leonard
 67828:2026-02-09:0,67828,2026-02-09,,Pass,8.0,,,Lucas  Willis
 67828:2026-02-10:0,67828,2026-02-10,,Pass,2.0,,,Lucas  Willis
+67828:2026-09-09:0,67828,2026-09-09,,Pass,3.0,,,Lucas  Willis
 67856:2024-01-25:0,67856,2024-01-25,Routine,Pass,,,,Danny Lee
 67862:2025-02-28:0,67862,2025-02-28,Routine,Pass,1.0,,,Jesus Zapien
 67862:2025-04-04:0,67862,2025-04-04,Reinspection,Pass,1.0,,,Jesus Zapien
@@ -14438,6 +14586,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 68696:2025-02-11:0,68696,2025-02-11,Reinspection,Pass,,,,Philips Ossai
 68696:2026-03-09:0,68696,2026-03-09,,Pass,2.0,,,Lucas  Willis
 68696:2026-03-12:0,68696,2026-03-12,,Pass,,,,Lucas  Willis
+68696:2026-09-01:0,68696,2026-09-01,,Pass,3.0,,,Lucas  Willis
+68696:2026-09-01:1,68696,2026-09-01,,Pass,,,,Lucas  Willis
 6873:2024-12-03:0,6873,2024-12-03,Routine,Pass,,,,Jesus Zapien
 68742:2024-05-26:0,68742,2024-05-26,Routine,Pass,1.0,,,Zack Parsons
 68764:2025-04-29:0,68764,2025-04-29,Routine,Pass,7.0,,,Sophia Huie
@@ -14526,6 +14676,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 69172:2025-05-05:0,69172,2025-05-05,Routine,Pass,7.0,,,Michael Mooney
 69181:2024-02-29:0,69181,2024-02-29,Routine,Pass,8.0,,,Carlos Barragan
 69181:2025-04-28:0,69181,2025-04-28,Routine,Pass,3.0,,,Carlos Barragan
+69186:2026-09-02:0,69186,2026-09-02,,Pass,3.0,,,Sojeatta Khim
 69194:2024-06-26:0,69194,2024-06-26,Routine,Conditional Pass,14.0,,,Katie Dea
 69194:2024-07-09:0,69194,2024-07-09,Reinspection,Pass,4.0,,,Katie Dea
 69207:2024-03-08:0,69207,2024-03-08,Routine,Pass,,,,William Bajjalieh
@@ -14739,6 +14890,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 70856:2025-01-14:0,70856,2025-01-14,Reinspection,Pass,2.0,,,Katie Dea
 70908:2024-07-23:0,70908,2024-07-23,Routine,Pass,,,,Patrick Wood
 70908:2025-02-12:0,70908,2025-02-12,Routine,Pass,3.0,,,Roy Bwogi
+70908:2026-09-16:0,70908,2026-09-16,,Pass,3.0,,,Roy Bwogi
 70912:2024-09-17:0,70912,2024-09-17,Complaint (I),Pass,,,,Michael Mooney
 70912:2024-12-12:0,70912,2024-12-12,Routine,Pass,9.0,,,Michael Mooney
 70912:2025-07-23:0,70912,2025-07-23,,Pass,8.0,,,John  Wells
@@ -14749,6 +14901,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 70914:2025-07-07:0,70914,2025-07-07,,Pass,7.0,,,Michael Mooney
 70914:2026-02-02:0,70914,2026-02-02,,Pass,5.0,,,Michael Mooney
 70914:2026-02-05:0,70914,2026-02-05,,Pass,3.0,,,Michael Mooney
+70914:2026-09-14:0,70914,2026-09-14,,Pass,3.0,,,Michael Mooney
 70921:2024-01-30:0,70921,2024-01-30,Routine,Pass,1.0,,,Danny Lee
 70921:2025-06-04:0,70921,2025-06-04,Routine,Pass,1.0,,,Sophia Huie
 70929:2024-06-07:0,70929,2024-06-07,Routine,Pass,4.0,,,William Bajjalieh
@@ -14776,6 +14929,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 71065:2025-03-07:0,71065,2025-03-07,Reinspection,Pass,2.0,,,John  Wells
 71065:2025-03-14:0,71065,2025-03-14,Reinspection,Pass,1.0,,,John  Wells
 71065:2025-09-02:0,71065,2025-09-02,,Conditional Pass,8.0,,,John  Wells
+71065:2026-09-09:0,71065,2026-09-09,,Pass,5.0,,,John  Wells
 71131:2025-03-10:0,71131,2025-03-10,Routine,Closure,7.0,,,Roy Bwogi
 71131:2025-03-14:0,71131,2025-03-14,Reinspection,Closure,,,,Roy Bwogi
 71131:2025-03-17:0,71131,2025-03-17,Reinspection,Pass,,,,Roy Bwogi
@@ -15057,6 +15211,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 75113:2025-07-02:0,75113,2025-07-02,,Pass,,,,Patrick Wood
 75113:2026-01-28:0,75113,2026-01-28,,Pass,2.0,,,Patrick Wood
 75113:2026-08-04:0,75113,2026-08-04,,Pass,3.0,,,Patrick Wood
+75113:2026-09-01:0,75113,2026-09-01,,Pass,,,,Patrick Wood
 75147:2025-03-06:0,75147,2025-03-06,Routine,Pass,4.0,,,Michael Mooney
 75147:2025-04-15:0,75147,2025-04-15,Complaint (I),Pass,,,,Sharon Aguila-Leonard
 75147:2026-08-04:0,75147,2026-08-04,,Pass,11.0,,,Michael Mooney
@@ -15218,6 +15373,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 76633:2025-06-13:0,76633,2025-06-13,Complaint (I),Pass,,,,Tiombe Wiley
 76633:2025-12-30:0,76633,2025-12-30,,Pass,1.0,,,Carlos Barragan
 76665:2025-11-20:0,76665,2025-11-20,,Pass,,,,Patrick Wood
+76676:2026-09-08:0,76676,2026-09-08,,Pass,2.0,,,Lucas  Willis
 76684:2024-05-03:0,76684,2024-05-03,Complaint (I),Pass,,,,Abel Simon
 76684:2024-08-16:0,76684,2024-08-16,Routine,Pass,3.0,,,William Bajjalieh
 76684:2024-08-27:0,76684,2024-08-27,Reinspection,Pass,2.0,,,William Bajjalieh
@@ -15396,6 +15552,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 77969:2026-02-26:0,77969,2026-02-26,,Pass,1.0,,,Jessica Jang
 77973:2026-01-13:0,77973,2026-01-13,,Pass,5.0,,,Lucas  Willis
 77973:2026-01-20:0,77973,2026-01-20,,Pass,,,,Lucas  Willis
+77973:2026-09-09:0,77973,2026-09-09,,Pass,,,,Lucas  Willis
 78028:2025-01-09:0,78028,2025-01-09,Routine,Pass,4.0,,,Philips Ossai
 78028:2026-02-09:0,78028,2026-02-09,,Pass,6.0,,,Lucas  Willis
 78063:2024-01-18:0,78063,2024-01-18,Complaint (I),Pass,,,,Amelia Castelli
@@ -15408,6 +15565,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 78070:2025-07-24:0,78070,2025-07-24,,Pass,,,,Patrick Wood
 78070:2026-01-30:0,78070,2026-01-30,,Pass,,,,Patrick Wood
 78070:2026-08-11:0,78070,2026-08-11,,Pass,4.0,,,Patrick Wood
+78070:2026-09-02:0,78070,2026-09-02,,Pass,,,,Patrick Wood
 78075:2024-02-02:0,78075,2024-02-02,Routine,Pass,3.0,,,William Bajjalieh
 78076:2025-06-12:0,78076,2025-06-12,Routine,Pass,,,,Roy Bwogi
 78102:2026-02-10:0,78102,2026-02-10,,Pass,4.0,,,Patrick Wood
@@ -15455,6 +15613,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 78338:2025-11-07:0,78338,2025-11-07,,Conditional Pass,,,,Amelia Castelli
 78347:2024-11-12:0,78347,2024-11-12,Routine,Pass,7.0,,,Michael Mooney
 78347:2025-09-02:0,78347,2025-09-02,,Pass,5.0,,,Michael Mooney
+78347:2026-09-01:0,78347,2026-09-01,,Pass,2.0,,,Michael Mooney
 78402:2024-02-28:0,78402,2024-02-28,Routine,Pass,1.0,,,Philips Ossai
 78402:2025-04-29:0,78402,2025-04-29,Site Visit,Pass,,,,Sophia Huie
 78402:2025-05-29:0,78402,2025-05-29,Site Visit,Pass,,,,Sophia Huie
@@ -15648,6 +15807,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 8025:2024-02-22:0,8025,2024-02-22,Reinspection,Pass,3.0,,,Maribel Rodriguez
 8025:2024-08-08:0,8025,2024-08-08,Site Visit,Pass,,,,Christina Lee
 8025:2025-04-23:0,8025,2025-04-23,Routine,Pass,6.0,,,Maribel Rodriguez
+8025:2026-09-15:0,8025,2026-09-15,,Pass,5.0,,,Cristina Zepeda
 80253:2024-05-07:0,80253,2024-05-07,Routine,Pass,5.0,,,Sophia Huie
 80253:2024-08-29:0,80253,2024-08-29,Complaint (I),Pass,,,,Sophia Huie
 80253:2024-09-05:0,80253,2024-09-05,Complaint (R),Pass,,,,Sophia Huie
@@ -15672,6 +15832,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 80316:2024-12-26:0,80316,2024-12-26,Complaint (I),Pass,,,,William Bajjalieh
 80316:2025-05-08:0,80316,2025-05-08,Routine,Pass,3.0,,,William Bajjalieh
 80316:2025-05-15:0,80316,2025-05-15,Reinspection,Pass,,,,William Bajjalieh
+80316:2026-09-08:0,80316,2026-09-08,,Pass,5.0,,,Thuan  Tieu
+80316:2026-09-15:0,80316,2026-09-15,,Pass,,,,Thuan  Tieu
 80361:2025-02-06:0,80361,2025-02-06,Routine,Pass,5.0,,,John  Wells
 80361:2025-08-06:0,80361,2025-08-06,,Pass,4.0,,,John  Wells
 80361:2026-02-25:0,80361,2026-02-25,,Pass,10.0,,,John  Wells
@@ -15745,6 +15907,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 80931:2025-02-11:0,80931,2025-02-11,Complaint (I),Pass,,,,Michael Mooney
 80931:2026-02-11:0,80931,2026-02-11,,Pass,8.0,,,John  Wells
 80931:2026-02-20:0,80931,2026-02-20,,Pass,2.0,,,John  Wells
+80931:2026-09-01:0,80931,2026-09-01,,Pass,10.0,,,John  Wells
+80931:2026-09-03:0,80931,2026-09-03,,Pass,2.0,,,John  Wells
 80937:2025-03-11:0,80937,2025-03-11,Site Visit,Pass,,,,Patrick Wood
 80961:2025-04-24:0,80961,2025-04-24,Routine,Pass,1.0,,,Amy Johnson
 80964:2024-01-18:0,80964,2024-01-18,Routine,Pass,2.0,,,William Bajjalieh
@@ -15790,6 +15954,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 81258:2025-04-16:0,81258,2025-04-16,Complaint (I),Pass,,,,William Bajjalieh
 81258:2025-04-16:1,81258,2025-04-16,Routine,Pass,5.0,,,William Bajjalieh
 81258:2025-04-25:0,81258,2025-04-25,Reinspection,Pass,,,,William Bajjalieh
+81264:2026-09-09:0,81264,2026-09-09,,Pass,,,,Lucas  Willis
 81297:2024-03-18:0,81297,2024-03-18,Routine,Pass,10.0,,,Katie Dea
 81297:2024-03-27:0,81297,2024-03-27,Reinspection,Pass,5.0,,,Katie Dea
 81297:2025-01-29:0,81297,2025-01-29,Routine,Pass,4.0,,,Katie Dea
@@ -15835,6 +16000,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 81522:2025-07-30:0,81522,2025-07-30,,Pass,4.0,,,John  Wells
 81522:2025-08-12:0,81522,2025-08-12,,Pass,1.0,,,John  Wells
 81522:2026-02-25:0,81522,2026-02-25,,Pass,4.0,,,John  Wells
+81522:2026-09-09:0,81522,2026-09-09,,Pass,7.0,,,John  Wells
 81528:2024-03-12:0,81528,2024-03-12,Routine,Pass,5.0,,,Joanna Huber
 81528:2024-09-17:0,81528,2024-09-17,Routine,Pass,4.0,,,Michael Mooney
 81528:2025-06-18:0,81528,2025-06-18,Routine,Pass,3.0,,,Michael Mooney
@@ -15954,6 +16120,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 82578:2025-04-01:0,82578,2025-04-01,Routine,Pass,2.0,,,Sophia Huie
 82578:2025-04-16:0,82578,2025-04-16,Reinspection,Pass,,,,Sophia Huie
 82578:2026-01-21:0,82578,2026-01-21,,Pass,3.0,,,Sophia Huie
+82578:2026-09-01:0,82578,2026-09-01,,Conditional Pass,6.0,,,Michael Mooney
 82599:2024-11-22:0,82599,2024-11-22,Routine,Closure,1.0,,,Patrick Wood
 82636:2024-02-28:0,82636,2024-02-28,Routine,Pass,2.0,,,Zack Parsons
 82636:2024-08-21:0,82636,2024-08-21,Routine,Pass,3.0,,,Zack Parsons
@@ -16011,6 +16178,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 82959:2025-04-18:0,82959,2025-04-18,Reinspection,Pass,1.0,,,John  Wells
 82959:2025-05-02:0,82959,2025-05-02,Reinspection,Pass,,,,John  Wells
 82963:2026-04-09:0,82963,2026-04-09,,Pass,5.0,,,John  Wells
+82973:2026-09-14:0,82973,2026-09-14,,Pass,,,,Usman Javaid
 8299:2024-08-08:0,8299,2024-08-08,Routine,Pass,2.0,,,John  Wells
 8299:2024-08-15:0,8299,2024-08-15,Reinspection,Pass,2.0,,,John  Wells
 82992:2024-09-18:0,82992,2024-09-18,Routine,Pass,1.0,,,Zack Parsons
@@ -16344,6 +16512,8 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 85363:2025-08-21:0,85363,2025-08-21,,Pass,7.0,,,John  Wells
 85363:2025-09-03:0,85363,2025-09-03,,Pass,1.0,,,John  Wells
 85363:2026-03-12:0,85363,2026-03-12,,Pass,6.0,,,John  Wells
+85363:2026-09-08:0,85363,2026-09-08,,Closure,9.0,,,John  Wells
+85363:2026-09-09:0,85363,2026-09-09,,Pass,2.0,,,John  Wells
 85399:2024-07-31:0,85399,2024-07-31,Routine,Pass,,,,Luz Brown
 85495:2024-06-04:0,85495,2024-06-04,Complaint (I),Pass,,,,Tiombe Wiley
 85495:2024-06-04:1,85495,2024-06-04,Routine,Conditional Pass,4.0,,,Tiombe Wiley
@@ -16400,6 +16570,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 85714:2025-05-22:0,85714,2025-05-22,Reinspection,Pass,,,,Sophia Huie
 85739:2025-01-08:0,85739,2025-01-08,Routine,Pass,6.0,,,Tiombe Wiley
 85787:2024-09-03:0,85787,2024-09-03,Routine,Pass,2.0,,,William Bajjalieh
+85787:2026-09-10:0,85787,2026-09-10,,Pass,5.0,,,Thuan  Tieu
 85796:2024-07-03:0,85796,2024-07-03,Routine,Closure,18.0,,,Michael Mooney
 85796:2024-07-05:0,85796,2024-07-05,Reinspection,Pass,10.0,,,Michael Mooney
 85796:2024-07-29:0,85796,2024-07-29,Reinspection,Closure,14.0,,,Michael Mooney
@@ -16521,6 +16692,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 86296:2025-05-16:0,86296,2025-05-16,Reinspection,Closure,5.0,,,Roy Bwogi
 86296:2025-05-20:0,86296,2025-05-20,Reinspection,Pass,5.0,,,Roy Bwogi
 86296:2025-10-01:0,86296,2025-10-01,,Pass,1.0,,,Roy Bwogi
+86296:2026-09-15:0,86296,2026-09-15,,Pass,4.0,,,Roy Bwogi
 86333:2025-01-06:0,86333,2025-01-06,Routine,Pass,4.0,,,Farhan Khan
 86333:2025-01-23:0,86333,2025-01-23,Reinspection,Pass,,,,Farhan Khan
 86333:2026-01-27:0,86333,2026-01-27,,Pass,,,,Montre  Tieu
@@ -16629,6 +16801,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 86986:2024-05-09:0,86986,2024-05-09,,Pass,14.0,,,Luz Brown
 86990:2025-01-30:0,86990,2025-01-30,Routine,Pass,2.0,,,Aron Wong
 86990:2025-08-11:0,86990,2025-08-11,,Pass,3.0,,,Aron Wong
+86990:2026-09-14:0,86990,2026-09-14,,Pass,4.0,,,Aron Wong
 86991:2024-09-17:0,86991,2024-09-17,Routine,Pass,4.0,,,John  Wells
 86991:2025-04-16:0,86991,2025-04-16,Routine,Pass,4.0,,,John  Wells
 86991:2025-05-02:0,86991,2025-05-02,Reinspection,Pass,2.0,,,John  Wells
@@ -16689,6 +16862,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 87209:2025-02-14:0,87209,2025-02-14,Reinspection,Pass,2.0,,,John  Wells
 87209:2025-08-21:0,87209,2025-08-21,,Pass,5.0,,,John  Wells
 87209:2026-02-24:0,87209,2026-02-24,,Pass,5.0,,,John  Wells
+87209:2026-09-08:0,87209,2026-09-08,,Pass,4.0,,,John  Wells
 87258:2024-05-16:0,87258,2024-05-16,Routine,Pass,7.0,,,Farhan Khan
 87258:2024-07-02:0,87258,2024-07-02,Site Visit,,,,,Albert Felipe
 87258:2025-03-26:0,87258,2025-03-26,Routine,Conditional Pass,4.0,,,Farhan Khan
@@ -16784,6 +16958,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 87765:2024-12-17:1,87765,2024-12-17,Routine,Conditional Pass,7.0,,,Aron Wong
 87765:2024-12-31:0,87765,2024-12-31,Reinspection,Pass,3.0,,,Aron Wong
 87765:2025-02-06:0,87765,2025-02-06,Reinspection,Pass,2.0,,,Aron Wong
+87765:2026-08-31:0,87765,2026-08-31,,Pass,4.0,,,Usman Javaid
 87782:2024-05-30:0,87782,2024-05-30,Routine,Pass,3.0,,,Tiombe Wiley
 87796:2024-05-23:0,87796,2024-05-23,Routine,Pass,1.0,,,Aron Wong
 87805:2026-08-12:0,87805,2026-08-12,,Pass,,,,Jessica Jang
@@ -16889,9 +17064,11 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 88475:2025-05-15:0,88475,2025-05-15,Routine,Pass,3.0,,,Danny Lee
 88475:2026-01-20:0,88475,2026-01-20,,Pass,3.0,,,Sophia Huie
 88475:2026-01-27:0,88475,2026-01-27,,Pass,,,,Sophia Huie
+88475:2026-09-09:0,88475,2026-09-09,,Pass,4.0,,,Sophia Huie
 88488:2024-08-19:0,88488,2024-08-19,Routine,Pass,11.0,,,Danny Lee
 88488:2024-08-26:0,88488,2024-08-26,Reinspection,Pass,,,,Danny Lee
 88488:2026-01-29:0,88488,2026-01-29,,Pass,1.0,,,Montre  Tieu
+88488:2026-09-09:0,88488,2026-09-09,,Pass,2.0,,,Montre  Tieu
 88498:2025-04-08:0,88498,2025-04-08,Routine,Pass,2.0,,,Danny Lee
 88498:2025-06-17:0,88498,2025-06-17,Complaint (I),Pass,,,,Danny Lee
 88498:2025-09-22:0,88498,2025-09-22,,Pass,,,,Sophia Huie
@@ -17149,6 +17326,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 90214:2025-10-08:0,90214,2025-10-08,,Pass,,,,Carlos Barragan
 90217:2026-03-18:0,90217,2026-03-18,,Pass,5.0,,,Lucas  Willis
 90219:2024-10-08:0,90219,2024-10-08,Routine,Pass,4.0,,,Sophia Huie
+90219:2026-09-02:0,90219,2026-09-02,,Pass,3.0,,,Alyssa  Manzano
 90222:2024-10-22:0,90222,2024-10-22,Routine,Conditional Pass,4.0,,,Michael Mooney
 90222:2024-11-06:0,90222,2024-11-06,Reinspection,Pass,,,,Michael Mooney
 90222:2025-08-26:0,90222,2025-08-26,,Pass,4.0,,,Michael Mooney
@@ -17178,6 +17356,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 90332:2025-05-08:0,90332,2025-05-08,Routine,Pass,9.0,,,Roy Bwogi
 90332:2025-05-13:0,90332,2025-05-13,Reinspection,Pass,5.0,,,Roy Bwogi
 90335:2024-07-05:0,90335,2024-07-05,Routine,Pass,3.0,,,John  Wells
+90335:2026-09-02:0,90335,2026-09-02,,Pass,,,,Alyssa  Manzano
 90341:2024-05-02:0,90341,2024-05-02,Routine,Pass,1.0,,,Patrick Wood
 90341:2024-12-05:0,90341,2024-12-05,Routine,Pass,2.0,,,Patrick Wood
 90341:2025-07-03:0,90341,2025-07-03,,Pass,7.0,,,Roy Bwogi
@@ -17276,6 +17455,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 90643:2025-05-05:0,90643,2025-05-05,Routine,Pass,,,,Sojeatta Khim
 90652:2025-01-02:0,90652,2025-01-02,Routine,Pass,4.0,,,Tiombe Wiley
 90661:2025-11-06:0,90661,2025-11-06,,Pass,1.0,,,Lucas  Willis
+90661:2026-09-16:0,90661,2026-09-16,,Pass,,,,Lucas  Willis
 90672:2026-04-21:0,90672,2026-04-21,,Pass,1.0,,,Katherine Tuazon
 90685:2025-04-15:0,90685,2025-04-15,Routine,Pass,5.0,,,John  Wells
 90685:2025-06-12:0,90685,2025-06-12,Site Visit,Pass,,,,John  Wells
@@ -17288,6 +17468,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 90758:2024-04-11:0,90758,2024-04-11,Routine,Pass,,,,William Bajjalieh
 90758:2025-05-13:0,90758,2025-05-13,Routine,Pass,,,,William Bajjalieh
 90758:2026-03-17:0,90758,2026-03-17,,Pass,,,,Thuan  Tieu
+90758:2026-09-04:0,90758,2026-09-04,,Pass,,,,Thuan  Tieu
 90801:2024-02-16:0,90801,2024-02-16,Routine,Pass,2.0,,,Jesus Zapien
 90801:2024-03-01:0,90801,2024-03-01,Reinspection,Pass,2.0,,,Jesus Zapien
 90801:2024-08-14:0,90801,2024-08-14,Routine,Pass,6.0,,,Amy Johnson
@@ -17394,6 +17575,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 91250:2025-05-21:0,91250,2025-05-21,Routine,Pass,4.0,,,Danny Nguyen
 91250:2026-02-25:0,91250,2026-02-25,,Pass,5.0,,,Lucas  Willis
 91250:2026-03-04:0,91250,2026-03-04,,Pass,,,,Lucas  Willis
+91250:2026-09-08:0,91250,2026-09-08,,Pass,2.0,,,Lucas  Willis
 91270:2024-02-21:0,91270,2024-02-21,Routine,Pass,,,,Amelia Castelli
 91270:2024-09-06:0,91270,2024-09-06,Routine,Pass,2.0,,,Amelia Castelli
 91272:2024-10-23:0,91272,2024-10-23,Routine,Pass,3.0,,,Katie Dea
@@ -17417,6 +17599,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 91300:2025-08-06:0,91300,2025-08-06,,Pass,6.0,,,John  Wells
 91300:2025-08-22:0,91300,2025-08-22,,Pass,3.0,,,John  Wells
 91300:2026-02-26:0,91300,2026-02-26,,Pass,4.0,,,John  Wells
+91300:2026-09-03:0,91300,2026-09-03,,Pass,2.0,,,John  Wells
 91330:2025-04-08:0,91330,2025-04-08,Routine,Pass,6.0,,,Sophia Huie
 91330:2025-04-22:0,91330,2025-04-22,Reinspection,Pass,,,,Sophia Huie
 91330:2026-04-01:0,91330,2026-04-01,,Pass,6.0,,,Sophia Huie
@@ -17787,6 +17970,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 93543:2025-04-10:1,93543,2025-04-10,Structural,,,,,Danny Nguyen
 93557:2024-09-27:0,93557,2024-09-27,Routine,Pass,2.0,,,William Bajjalieh
 93557:2024-10-08:0,93557,2024-10-08,Reinspection,Pass,,,,William Bajjalieh
+93557:2026-09-15:0,93557,2026-09-15,,Pass,,,,Thuan  Tieu
 93572:2024-12-10:0,93572,2024-12-10,Routine,Pass,7.0,,,Carlos Barragan
 93573:2024-10-15:0,93573,2024-10-15,Routine,Pass,2.0,,,Amy Johnson
 93573:2026-02-10:0,93573,2026-02-10,,Pass,2.0,,,Usman Javaid
@@ -18386,6 +18570,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 97335:2024-11-15:0,97335,2024-11-15,Routine,Pass,,,,Amy Johnson
 97335:2025-03-26:0,97335,2025-03-26,Routine,Pass,2.0,,,Amy Johnson
 97335:2026-02-26:0,97335,2026-02-26,,Pass,,,,Usman Javaid
+97335:2026-09-10:0,97335,2026-09-10,,Pass,,,,Usman Javaid
 97337:2025-04-07:0,97337,2025-04-07,Routine,Pass,1.0,,,Tiombe Wiley
 97356:2025-01-14:0,97356,2025-01-14,Routine,Pass,6.0,,,Abel Simon
 97356:2025-02-10:0,97356,2025-02-10,Reinspection,Pass,,,,Abel Simon
@@ -18538,6 +18723,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 97976:2025-03-10:0,97976,2025-03-10,Routine,Pass,,,,Michael Mooney
 97976:2025-09-10:0,97976,2025-09-10,,Pass,2.0,,,John  Wells
 97976:2026-01-28:0,97976,2026-01-28,,Pass,,,,John  Wells
+97976:2026-09-08:0,97976,2026-09-08,,Pass,1.0,,,John  Wells
 98:2025-02-10:0,98,2025-02-10,Routine,Pass,7.0,,,Sophia Huie
 98:2025-03-04:0,98,2025-03-04,Reinspection,Pass,4.0,,,Sophia Huie
 98:2026-02-03:0,98,2026-02-03,,Pass,,,,Sophia Huie
@@ -18553,6 +18739,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 98047:2024-05-07:0,98047,2024-05-07,Routine,Pass,2.0,,,William Bajjalieh
 98047:2025-05-15:0,98047,2025-05-15,Routine,Pass,5.0,,,Jessica Jang
 98051:2024-12-23:0,98051,2024-12-23,Routine,Pass,5.0,,,Michael Mooney
+98051:2026-09-10:0,98051,2026-09-10,,Pass,1.0,,,Michael Mooney
 98063:2024-04-29:0,98063,2024-04-29,Routine,Pass,9.0,,,Joanna Huber
 98063:2024-06-10:0,98063,2024-06-10,Reinspection,Pass,2.0,,,John  Wells
 98063:2024-06-17:0,98063,2024-06-17,Reinspection,Pass,,,,John  Wells
@@ -18624,6 +18811,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 98229:2024-01-03:0,98229,2024-01-03,Reinspection,Pass,,,,Sophia Huie
 98229:2024-10-08:0,98229,2024-10-08,Routine,Pass,4.0,,,John  Wells
 98229:2024-10-11:0,98229,2024-10-11,Reinspection,Pass,,,,John  Wells
+98229:2026-09-02:0,98229,2026-09-02,,Pass,1.0,,,Alyssa  Manzano
 98242:2025-06-04:0,98242,2025-06-04,Routine,Pass,1.0,,,Roy Bwogi
 98278:2024-03-12:0,98278,2024-03-12,Routine,Pass,1.0,,,Jesus Zapien
 98278:2024-03-29:0,98278,2024-03-29,Reinspection,Pass,1.0,,,Jesus Zapien
@@ -18717,6 +18905,7 @@ inspection_id,business_id,inspection_date,inspection_type,facility_rating_status
 99040:2025-03-11:1,99040,2025-03-11,Routine,Pass,,,,Sharon Aguila-Leonard
 99040:2025-03-19:0,99040,2025-03-19,Reinspection,Pass,,,,Sharon Aguila-Leonard
 99040:2026-02-18:0,99040,2026-02-18,,Pass,4.0,,,Lucas  Willis
+99040:2026-09-10:0,99040,2026-09-10,,Pass,3.0,,,Lucas  Willis
 99057:2024-06-11:0,99057,2024-06-11,Complaint (I),Pass,,,,Christina Lee
 99057:2024-06-25:0,99057,2024-06-25,Complaint (R),Pass,,,,Christina Lee
 99057:2024-06-27:0,99057,2024-06-27,Complaint (R),Pass,,,,Christina Lee
@@ -19061,6 +19250,7 @@ A85602:2025-03-19:1,A85602,2025-03-19,Structural,,,,,William Bajjalieh
 A87677:2024-05-30:0,A87677,2024-05-30,Routine,Pass,12.0,,,Maribel Rodriguez
 A87677:2024-10-07:0,A87677,2024-10-07,Reinspection,Conditional Pass,5.0,,,Maribel Rodriguez
 A87677:2025-05-29:0,A87677,2025-05-29,Routine,Pass,4.0,,,Maribel Rodriguez
+A87677:2026-09-15:0,A87677,2026-09-15,,Pass,,,,Cristina Zepeda
 A89077:2024-08-07:0,A89077,2024-08-07,Routine,Pass,7.0,,,Mary Freschet
 A90539:2024-12-13:0,A90539,2024-12-13,Complaint (I),Pass,,,,Sharon Aguila-Leonard
 A90539:2024-12-13:1,A90539,2024-12-13,Routine,Pass,,,,Sharon Aguila-Leonard
@@ -19239,6 +19429,7 @@ CP06751740:2024-07-16:0,CP06751740,2024-07-16,Routine,,,,,Zack Parsons
 CP06752214:2024-03-05:0,CP06752214,2024-03-05,Routine,Pass,,,,William Bajjalieh
 CP06752214:2024-11-05:0,CP06752214,2024-11-05,Routine,Pass,,,,Danny Nguyen
 CP06752214:2025-03-25:0,CP06752214,2025-03-25,Routine,Pass,,,,William Bajjalieh
+CP06752214:2026-09-10:0,CP06752214,2026-09-10,,Pass,,,,Thuan  Tieu
 CP06752216:2024-03-22:0,CP06752216,2024-03-22,Routine,Pass,,,,William Bajjalieh
 CP06752216:2024-11-05:0,CP06752216,2024-11-05,Routine,Pass,,,,Abel Simon
 CP06752216:2025-03-21:0,CP06752216,2025-03-21,Routine,Pass,,,,William Bajjalieh
@@ -19397,12 +19588,14 @@ D1428:2024-03-21:0,D1428,2024-03-21,Routine,Pass,1.0,,,William Bajjalieh
 D1428:2024-11-07:0,D1428,2024-11-07,Routine,Pass,,,,Philips Ossai
 D1428:2025-04-10:0,D1428,2025-04-10,Routine,Pass,,,,William Bajjalieh
 D1428:2026-03-24:0,D1428,2026-03-24,,Pass,,,,Thuan  Tieu
+D1428:2026-09-10:0,D1428,2026-09-10,,Pass,3.0,,,Thuan  Tieu
 D1429:2024-05-03:0,D1429,2024-05-03,Routine,Pass,3.0,,,Abel Simon
 D1429:2024-10-08:0,D1429,2024-10-08,Routine,Pass,,,,Philips Ossai
 D1429:2025-03-26:0,D1429,2025-03-26,Routine,Pass,6.0,,,Jessica Jang
 D2237:2024-05-13:0,D2237,2024-05-13,Routine,Pass,,,,Danny Nguyen
 D2237:2024-10-17:0,D2237,2024-10-17,Routine,Pass,,,,Philips Ossai
 D2237:2025-03-12:0,D2237,2025-03-12,Routine,Pass,,,,Jessica Jang
+D2237:2026-09-09:0,D2237,2026-09-09,,Pass,1.0,,,Jessica Jang
 D23272:2024-06-17:0,D23272,2024-06-17,Routine,Pass,1.0,,,Joanna Huber
 D23272:2024-07-31:0,D23272,2024-07-31,Routine,Pass,,,,Zack Parsons
 D23272:2025-06-24:0,D23272,2025-06-24,Routine,Pass,,,,Amelia Castelli
@@ -19463,6 +19656,7 @@ D5020:2024-12-04:0,D5020,2024-12-04,Routine,Pass,2.0,,,Michael Mooney
 D5020:2025-02-27:0,D5020,2025-02-27,Routine,Pass,,,,Michael Mooney
 D5020:2025-09-02:0,D5020,2025-09-02,,Pass,,,,John  Wells
 D5020:2026-01-27:0,D5020,2026-01-27,,Pass,3.0,,,John  Wells
+D5020:2026-09-08:0,D5020,2026-09-08,,Pass,1.0,,,John  Wells
 D5021:2024-01-26:0,D5021,2024-01-26,Routine,Pass,,,,Philips Ossai
 D5021:2024-04-22:0,D5021,2024-04-22,Routine,Pass,,,,Sophia Huie
 D5021:2024-10-30:0,D5021,2024-10-30,Routine,Pass,,,,Sophia Huie
@@ -19504,6 +19698,7 @@ D5814:2025-03-13:0,D5814,2025-03-13,Routine,Pass,2.0,,,Tiombe Wiley
 D5829:2024-05-06:0,D5829,2024-05-06,Routine,Pass,1.0,,,Danny Nguyen
 D5829:2024-10-22:0,D5829,2024-10-22,Routine,Pass,1.0,,,Danny Nguyen
 D5829:2025-03-12:0,D5829,2025-03-12,Routine,Pass,1.0,,,Jessica Jang
+D5829:2026-09-09:0,D5829,2026-09-09,,Pass,1.0,,,Jessica Jang
 D63346:2024-06-12:0,D63346,2024-06-12,Routine,Pass,,,,Zack Parsons
 D63346:2024-07-11:0,D63346,2024-07-11,Routine,Pass,1.0,,,Zack Parsons
 D63346:2025-06-18:0,D63346,2025-06-18,Routine,Pass,,,,Roy Bwogi
@@ -19536,6 +19731,7 @@ D712:2025-06-04:0,D712,2025-06-04,Routine,Pass,,,,Mary Joanne Freitas
 D712:2025-12-17:0,D712,2025-12-17,,Pass,,,,Montre  Tieu
 D717:2024-09-19:0,D717,2024-09-19,Routine,Pass,,,,Danny Lee
 D717:2025-06-04:0,D717,2025-06-04,Routine,Pass,,,,Mary Joanne Freitas
+D717:2026-09-11:0,D717,2026-09-11,,Pass,1.0,,,Montre  Tieu
 D720:2025-02-19:0,D720,2025-02-19,Routine,Pass,,,,Mary Joanne Freitas
 D720:2025-12-17:0,D720,2025-12-17,,Pass,6.0,,,Montre  Tieu
 D720:2026-04-17:0,D720,2026-04-17,,Pass,2.0,,,Montre  Tieu
@@ -19733,6 +19929,7 @@ FYF119104:2025-12-22:0,FYF119104,2025-12-22,,Pass,2.0,,,Lucas  Willis
 FYF119104:2026-06-04:0,FYF119104,2026-06-04,,Pass,,,,Lucas  Willis
 FYF119120:2024-09-12:0,FYF119120,2024-09-12,Routine,Pass,4.0,,,Michael Mooney
 FYF119120:2025-09-10:0,FYF119120,2025-09-10,,Pass,2.0,,,John  Wells
+FYF119120:2026-09-01:0,FYF119120,2026-09-01,,Pass,4.0,,,John  Wells
 FYF119121:2024-01-03:0,FYF119121,2024-01-03,,Pass,2.0,,,Luz Brown
 FYF119121:2024-01-19:0,FYF119121,2024-01-19,,Pass,,,,Luz Brown
 FYF119121:2026-07-16:0,FYF119121,2026-07-16,,Closure,5.0,,,Carlos Barragan
@@ -19796,6 +19993,7 @@ FYF119637:2024-10-08:0,FYF119637,2024-10-08,Routine,Conditional Pass,12.0,,,Mari
 FYF119637:2024-11-14:0,FYF119637,2024-11-14,Reinspection,Pass,5.0,,,Maribel Rodriguez
 FYF119686:2025-02-06:0,FYF119686,2025-02-06,Routine,Pass,2.0,,,Danny Nguyen
 FYF119686:2026-03-11:0,FYF119686,2026-03-11,,Pass,3.0,,,Lucas  Willis
+FYF119686:2026-09-16:0,FYF119686,2026-09-16,,Pass,4.0,,,Lucas  Willis
 FYF119687:2024-06-04:0,FYF119687,2024-06-04,Routine,Pass,4.0,,,Amy Johnson
 FYF119687:2024-07-03:0,FYF119687,2024-07-03,Reinspection,Pass,,,,Amy Johnson
 FYF119687:2024-10-08:0,FYF119687,2024-10-08,Foodborne Illness,Pass,,,,Amy Johnson
@@ -19905,6 +20103,7 @@ FYF120283:2025-09-11:0,FYF120283,2025-09-11,,Pass,4.0,,,Patrick Wood
 FYF120283:2026-03-12:0,FYF120283,2026-03-12,,Pass,4.0,,,Patrick Wood
 FYF120283:2026-03-31:0,FYF120283,2026-03-31,,Pass,3.0,,,Patrick Wood
 FYF120283:2026-04-14:0,FYF120283,2026-04-14,,Pass,,,,Patrick Wood
+FYF120283:2026-09-16:0,FYF120283,2026-09-16,,Pass,7.0,,,Patrick Wood
 FYF120306:2024-03-25:0,FYF120306,2024-03-25,Structural,,,,,Philips Ossai
 FYF120306:2025-03-20:0,FYF120306,2025-03-20,Structural,,,,,Roy Bwogi
 FYF120348:2024-01-03:0,FYF120348,2024-01-03,Site Visit,Pass,,,,Patrick Wood
@@ -20200,6 +20399,7 @@ H2406732748:2025-06-11:0,H2406732748,2025-06-11,Reinspection,Pass,2.0,,,Sophia H
 H2406732748:2026-02-24:0,H2406732748,2026-02-24,,Pass,5.0,,,Sophia Huie
 H2406732764:2024-02-20:0,H2406732764,2024-02-20,Routine,Pass,2.0,,,Danny Lee
 H2406732764:2026-03-23:0,H2406732764,2026-03-23,,Pass,,,,Usman Javaid
+H2406732764:2026-09-01:0,H2406732764,2026-09-01,,Pass,1.0,,,Usman Javaid
 H2406732775:2024-09-11:0,H2406732775,2024-09-11,Routine,Pass,4.0,,,Rochelle Veloso
 H2406732775:2024-09-13:0,H2406732775,2024-09-13,Site Visit,Pass,,,,Rochelle Veloso
 H2406732780:2024-03-29:0,H2406732780,2024-03-29,,Pass,,,,Sharon Aguila-Leonard
@@ -20231,6 +20431,7 @@ H2406732851:2024-02-20:0,H2406732851,2024-02-20,Routine,Pass,6.0,,,Katie Dea
 H2406732866:2024-04-16:0,H2406732866,2024-04-16,New Ownership (I),Pass,,,,Abel Simon
 H2406732866:2024-05-22:0,H2406732866,2024-05-22,New Ownership (R),Pass,,,,Abel Simon
 H2406732866:2024-06-21:0,H2406732866,2024-06-21,Routine,Pass,4.0,,,Abel Simon
+H2406732866:2026-09-09:0,H2406732866,2026-09-09,,Pass,1.0,,,Jessica Jang
 H2406732869:2024-09-18:0,H2406732869,2024-09-18,Routine,Pass,3.0,,,Jesus Zapien
 H2406732869:2024-10-23:0,H2406732869,2024-10-23,Reinspection,Pass,3.0,,,Jesus Zapien
 H2406732876:2024-02-21:0,H2406732876,2024-02-21,New Ownership (I),Pass,,,,Zack Parsons
@@ -20265,6 +20466,7 @@ H2406751764:2025-06-02:0,H2406751764,2025-06-02,Routine,Pass,5.0,,,Aron Wong
 H2406751764:2025-06-16:0,H2406751764,2025-06-16,Reinspection,Pass,1.0,,,Aron Wong
 H2406751764:2026-03-02:0,H2406751764,2026-03-02,,Pass,10.0,,,Usman Javaid
 H2406751764:2026-08-25:0,H2406751764,2026-08-25,,Conditional Pass,13.0,,,Usman Javaid
+H2406751764:2026-09-01:0,H2406751764,2026-09-01,,Pass,5.0,,,Usman Javaid
 H2406751765:2025-04-02:0,H2406751765,2025-04-02,Routine,Pass,6.0,,,Michael Mooney
 H2406751765:2025-10-23:0,H2406751765,2025-10-23,,Pass,5.0,,,Michael Mooney
 H2506732459:2025-11-05:0,H2506732459,2025-11-05,,Pass,,,,Montre  Tieu
@@ -20539,6 +20741,7 @@ H2606732637:2025-01-28:0,H2606732637,2025-01-28,Routine,Pass,6.0,,,John  Wells
 H2606732637:2025-02-04:0,H2606732637,2025-02-04,Reinspection,Pass,1.0,,,John  Wells
 H2606732637:2025-07-29:0,H2606732637,2025-07-29,,Pass,6.0,,,John  Wells
 H2606732637:2026-02-10:0,H2606732637,2026-02-10,,Pass,5.0,,,John  Wells
+H2606732637:2026-09-03:0,H2606732637,2026-09-03,,Pass,3.0,,,John  Wells
 H2606732661:2024-02-16:0,H2606732661,2024-02-16,Routine,Pass,,,,Patrick Wood
 H2606732661:2025-04-16:0,H2606732661,2025-04-16,Routine,Pass,,,,Roy Bwogi
 H2606732666:2024-05-16:0,H2606732666,2024-05-16,Site Visit,Pass,,,,Carlos Barragan
@@ -20760,6 +20963,7 @@ H8606732993:2025-01-22:0,H8606732993,2025-01-22,Reinspection,Pass,1.0,,,Katie De
 H8706732507:2024-09-11:0,H8706732507,2024-09-11,Routine,Pass,1.0,,,Michael Mooney
 H8706732507:2025-07-14:0,H8706732507,2025-07-14,,Pass,4.0,,,Michael Mooney
 H8706732507:2026-08-27:0,H8706732507,2026-08-27,,Pass,5.0,,,John  Wells
+H8706732507:2026-09-09:0,H8706732507,2026-09-09,,Pass,4.0,,,John  Wells
 H8706732806:2024-02-13:0,H8706732806,2024-02-13,New Ownership (R),Pass,,,,Christina Lee
 H8706732806:2024-02-13:1,H8706732806,2024-02-13,Routine,Pass,3.0,,,Christina Lee
 H8706732806:2024-09-12:0,H8706732806,2024-09-12,Routine,Pass,3.0,,,Michael Mooney

@@ -8,7 +8,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = ROOT / "data" / "processed"
-DB_PATH = ROOT / "backend" / "db" / "safety.db"
+DB_PATH = Path(os.environ.get("SAFETY_DB_PATH", ROOT / "backend" / "db" / "safety.db"))
 
 RESTAURANTS_CSV = PROCESSED_DIR / "restaurants.csv"
 INSPECTIONS_CSV = PROCESSED_DIR / "inspections.csv"

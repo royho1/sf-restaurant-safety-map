@@ -21,3 +21,4 @@ class Config:
     CORS_ORIGINS = _split_origins(os.environ.get("CORS_ORIGINS", ""))
     # Hours between DataSF refresh attempts. 0 disables. Unchanged source is a no-op.
     DATA_REFRESH_HOURS = float(os.environ.get("DATA_REFRESH_HOURS", "24"))
+    DATA_REFRESH_MAX_GEOCODES = int(os.environ.get("DATA_REFRESH_MAX_GEOCODES", "30"))
